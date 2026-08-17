@@ -1,0 +1,17 @@
+# Environments
+.env
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.py[codz]
+*.egg-info/
+.pytest_cache/
+.coverage
+
+# Editors / OS
+.DS_Store
+.vscode/
+.idea/
