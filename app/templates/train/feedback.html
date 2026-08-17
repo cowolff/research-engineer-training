@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Feedback — {{ scenario.title }}{% endblock %}
+{% block content %}
+  <h1>{{ scenario.title }}</h1>
+  <p class="card"><strong>Score: {{ (attempt.score * 100) | round | int }}%</strong></p>
+
+  <h2>Rubric</h2>
+  {% for item in attempt.grade['items'] %}
+    {% set concept = concepts_by_id.get(item.concept_id) %}
+    <div class="card">
+      <p>
+        <span class="chip chip--{{ item.status }}">{{ item.status }}</span>
+        <strong>{{ concept.name if concept else item.concept_id }}</strong>
+      </p>
+      <p>{{ item.feedback }}</p>
+      {% if item.evidence %}<p class="muted mono">Evidence: &ldquo;{{ item.evidence }}&rdquo;</p>{% endif %}
+      {% if item.status != 'covered' %}
+        <form method="post" action="{{ url_for('train.dispute', attempt_id=attempt.id) }}">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+          <input type="hidden" name="concept_id" value="{{ item.concept_id }}">
+          <button type="submit" class="btn btn--ghost">I did cover this</button>
+        </form>
+      {% endif %}
+    </div>
+  {% endfor %}
+
+  <h2>What a strong answer covers</h2>
+  <div class="card">{{ attempt.model_answer_md | markdown | safe }}</div>
+
+  <p><a class="btn" href="{{ url_for('core.dashboard') }}">Back to dashboard</a></p>
+{% endblock %}

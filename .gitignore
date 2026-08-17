@@ -15,3 +15,9 @@ __pycache__/
 .DS_Store
 .vscode/
 .idea/
+
+# App data — never committed; the resource index is a build artifact
+# (tools/build_resource_index.py) and *.db is local SQLite state.
+app/data/*.sqlite
+*.db
+*-export.json

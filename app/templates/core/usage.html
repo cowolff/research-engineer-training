@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Usage — Maluna{% endblock %}
+{% block content %}
+  <h1>LLM usage</h1>
+  <p class="muted">Every call this app makes to the model, logged — including the ones that failed validation and were retried. This is the accounting most LLM features skip.</p>
+
+  <div class="grid grid--2">
+    <div class="card"><p class="muted">Total calls</p><p class="mono" style="font-size:1.4rem;">{{ total_calls }}</p></div>
+    <div class="card"><p class="muted">Prompt tokens</p><p class="mono" style="font-size:1.4rem;">{{ total_prompt }}</p></div>
+    <div class="card"><p class="muted">Completion tokens</p><p class="mono" style="font-size:1.4rem;">{{ total_completion }}</p></div>
+    <div class="card"><p class="muted">Estimated cost</p><p class="mono" style="font-size:1.4rem;">${{ "%.4f"|format(total_cost / 100) }}</p></div>
+  </div>
+
+  <h2>Recent calls</h2>
+  <table>
+    <thead><tr><th>When</th><th>Purpose</th><th>Model</th><th>OK</th><th>Latency</th><th>Tokens</th></tr></thead>
+    <tbody>
+      {% for c in calls %}
+        <tr>
+          <td class="mono">{{ c.created_at.strftime('%Y-%m-%d %H:%M') }}</td>
+          <td>{{ c.purpose }}</td>
+          <td class="mono">{{ c.model }}</td>
+          <td>{{ 'ok' if c.ok else 'failed' }}</td>
+          <td class="mono">{{ c.latency_ms }} ms</td>
+          <td class="mono">{{ c.prompt_tokens }}/{{ c.completion_tokens }}</td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

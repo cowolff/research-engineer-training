@@ -1,0 +1,351 @@
+# Curriculum — source of truth, seeded into the DB at boot by `flask seed-curriculum`.
+#
+# Concept `id`s are permanent public identifiers: tutorials, resource-index
+# entries, and mastery rows all reference them. Renaming one requires a
+# migration (see docs/IMPLEMENTATION_PLAN.md §4.1).
+#
+# This is a seed covering all ten planned topic areas at moderate depth
+# (~5-6 concepts each) rather than the full ~90-concept target — breadth
+# across topics first, depth within each topic as a follow-up (see the plan's
+# Phase C, "Resource curation", for the equivalent expansion on the resource
+# side).
+version: 1
+topics:
+  - id: research-demonstrator-stack
+    title: "Standing up a ChatGPT-like research demonstrator"
+    band: 2
+    concepts:
+      - id: containerization
+        name: "Containerisation (Docker)"
+        essential: true
+        aliases: [docker, container, oci, image, dockerfile, podman]
+        probe: "Ships a reproducible environment as an image rather than 'works on my machine'"
+        related: [ci-cd, dependency-pinning, orchestration]
+      - id: inference-server
+        name: "Dedicated inference server (vLLM / TGI)"
+        essential: true
+        aliases: [vllm, tgi, kv cache, continuous batching, llama.cpp, text-generation-inference]
+        probe: "Serves the model from one warm, batching-aware process instead of loading it per request"
+        related: [gpu-scheduling, request-batching, streaming-responses]
+      - id: request-batching
+        name: "Request batching for LLM inference"
+        essential: true
+        aliases: [continuous batching, dynamic batching, throughput, queueing]
+        probe: "Groups concurrent generation requests so GPU throughput doesn't collapse to one-at-a-time"
+        related: [inference-server, gpu-scheduling]
+      - id: orchestration
+        name: "Orchestration & horizontal scaling (Kubernetes / Slurm)"
+        essential: false
+        aliases: [kubernetes, k8s, slurm, autoscaling, helm, pods]
+        related: [load-balancing, containerization, gpu-scheduling]
+      - id: load-balancing
+        name: "Load balancing a web + inference stack"
+        essential: true
+        aliases: [nginx, reverse proxy, sticky sessions, health checks, round robin]
+        probe: "Spreads requests across replicas so one slow or overloaded instance doesn't stall everyone"
+        related: [orchestration, streaming-responses]
+      - id: streaming-responses
+        name: "Streaming model output to the browser (SSE / websockets)"
+        essential: false
+        aliases: [server-sent events, sse, websocket, token streaming, chunked response]
+        related: [resource-modeling, load-balancing]
+
+  - id: web-auth
+    title: "Authentication and authorization for a web app"
+    band: 2
+    concepts:
+      - id: session-auth
+        name: "Server-side sessions vs. stateless tokens"
+        essential: true
+        aliases: [session, jwt, cookie, stateless auth, bearer token]
+        related: [password-hashing, csrf-protection]
+      - id: password-hashing
+        name: "Password storage (Argon2 / bcrypt, salting)"
+        essential: true
+        aliases: [argon2, bcrypt, salt, hashing, rainbow table]
+        related: [session-auth]
+      - id: oauth-oidc
+        name: "OAuth2 / OpenID Connect delegated login"
+        essential: false
+        aliases: [oauth, oidc, sso, authorization code flow, identity provider]
+        related: [session-auth]
+      - id: csrf-protection
+        name: "CSRF protection for state-changing requests"
+        essential: true
+        aliases: [csrf, samesite cookie, double submit, csrf token]
+        related: [session-auth, resource-modeling]
+      - id: mfa
+        name: "Multi-factor authentication"
+        essential: false
+        aliases: [mfa, 2fa, totp, webauthn, passkeys]
+        related: [password-hashing]
+      - id: credential-rotation
+        name: "Secret and credential rotation"
+        essential: false
+        aliases: [key rotation, secret rotation, revocation, token expiry]
+        related: [secrets-management]
+
+  - id: rest-api-design
+    title: "Designing a REST API"
+    band: 1
+    concepts:
+      - id: resource-modeling
+        name: "Modeling resources and URLs"
+        essential: true
+        aliases: [resource, endpoint, noun vs verb, url design]
+        related: [http-status-codes, api-versioning]
+      - id: http-status-codes
+        name: "Using HTTP status codes and methods correctly"
+        essential: true
+        aliases: [status code, http verb, idempotent, 4xx, 5xx]
+        related: [resource-modeling, error-envelopes]
+      - id: pagination
+        name: "Pagination for list endpoints"
+        essential: true
+        aliases: [pagination, cursor, offset, page size, has_more]
+        related: [resource-modeling]
+      - id: idempotency
+        name: "Idempotency keys for retried writes"
+        essential: false
+        aliases: [idempotency key, retry-safe, at-least-once, duplicate request]
+        related: [http-status-codes, event-driven-etl]
+      - id: error-envelopes
+        name: "Consistent error response shape"
+        essential: true
+        aliases: [error envelope, problem details, error code, validation error]
+        related: [http-status-codes]
+      - id: api-versioning
+        name: "API versioning strategy"
+        essential: false
+        aliases: [versioning, breaking change, deprecation, v1 v2]
+        related: [resource-modeling]
+
+  - id: data-pipelines-etl
+    title: "Data pipelines and ETL"
+    band: 2
+    concepts:
+      - id: etl-vs-elt
+        name: "ETL vs. ELT"
+        essential: true
+        aliases: [etl, elt, transform, extract load transform]
+        related: [data-contracts, batch-vs-stream]
+      - id: batch-vs-stream
+        name: "Batch vs. streaming pipelines"
+        essential: true
+        aliases: [batch processing, stream processing, kafka, micro-batch]
+        related: [etl-vs-elt, event-driven-etl]
+      - id: idempotent-reruns
+        name: "Idempotent, re-runnable pipeline stages"
+        essential: true
+        aliases: [idempotent pipeline, backfill, exactly-once, replay]
+        related: [event-driven-etl, idempotency]
+      - id: schema-evolution
+        name: "Schema evolution without breaking downstream consumers"
+        essential: false
+        aliases: [schema evolution, backward compatible, avro, schema registry]
+        related: [data-contracts]
+      - id: data-contracts
+        name: "Data contracts between producers and consumers"
+        essential: false
+        aliases: [data contract, sla, producer consumer, breaking change]
+        related: [schema-evolution, etl-vs-elt]
+      - id: event-driven-etl
+        name: "Event-driven ingestion"
+        essential: false
+        aliases: [event-driven, message queue, pub sub, cdc, change data capture]
+        related: [batch-vs-stream, idempotent-reruns]
+
+  - id: deployment-ops
+    title: "Deployment and operations"
+    band: 2
+    concepts:
+      - id: twelve-factor
+        name: "12-factor app principles"
+        essential: true
+        aliases: [12-factor, config in env, stateless process, disposability]
+        related: [secrets-management, ci-cd]
+      - id: ci-cd
+        name: "CI/CD pipelines"
+        essential: true
+        aliases: [ci, cd, continuous integration, continuous deployment, pipeline]
+        related: [containerization, rollback-strategy]
+      - id: secrets-management
+        name: "Secrets management (build vs. runtime config)"
+        essential: true
+        aliases: [secrets, runtime variable, build variable, vault, env var]
+        related: [twelve-factor, credential-rotation]
+      - id: health-checks
+        name: "Health checks and readiness probes"
+        essential: true
+        aliases: [health check, readiness probe, liveness probe, uptime]
+        related: [rollback-strategy, load-balancing]
+      - id: rollback-strategy
+        name: "Rollback and blue/green deployment"
+        essential: false
+        aliases: [rollback, blue-green, canary, deployment strategy]
+        related: [ci-cd, health-checks]
+      - id: infra-as-code
+        name: "Infrastructure as code"
+        essential: false
+        aliases: [terraform, iac, infrastructure as code, declarative infra]
+        related: [ci-cd]
+
+  - id: observability
+    title: "Observability"
+    band: 3
+    concepts:
+      - id: structured-logging
+        name: "Structured logging"
+        essential: true
+        aliases: [structured log, json log, log level, correlation id]
+        related: [distributed-tracing]
+      - id: metrics-vs-traces
+        name: "Metrics vs. traces vs. logs"
+        essential: true
+        aliases: [metric, trace, log, three pillars, prometheus]
+        related: [structured-logging, distributed-tracing]
+      - id: cardinality
+        name: "Metric cardinality"
+        essential: false
+        aliases: [cardinality, label explosion, high-cardinality, time series]
+        related: [metrics-vs-traces]
+      - id: alerting
+        name: "Alerting and paging"
+        essential: true
+        aliases: [alert, pagerduty, on-call, alert fatigue]
+        related: [slos, metrics-vs-traces]
+      - id: slos
+        name: "SLOs, SLIs, and error budgets"
+        essential: false
+        aliases: [slo, sli, error budget, availability target]
+        related: [alerting]
+      - id: distributed-tracing
+        name: "Distributed tracing across services"
+        essential: false
+        aliases: [tracing, span, opentelemetry, request id]
+        related: [structured-logging, metrics-vs-traces]
+
+  - id: ml-infra
+    title: "ML infrastructure"
+    band: 3
+    concepts:
+      - id: gpu-scheduling
+        name: "GPU scheduling and utilization"
+        essential: true
+        aliases: [gpu, cuda, nvidia-smi, utilization, mig]
+        related: [inference-server, request-batching]
+      - id: quantization
+        name: "Model quantization"
+        essential: false
+        aliases: [quantization, int8, fp16, bitsandbytes, gguf]
+        related: [gpu-scheduling]
+      - id: model-registry
+        name: "Model registry and versioning"
+        essential: false
+        aliases: [model registry, model version, artifact store, mlflow]
+        related: [experiment-tracking]
+      - id: eval-harness
+        name: "Evaluation harnesses for LLM behaviour"
+        essential: true
+        aliases: [eval, benchmark, llm judge, regression test for prompts]
+        related: [experiment-tracking]
+      - id: model-drift
+        name: "Model and data drift monitoring"
+        essential: false
+        aliases: [drift, distribution shift, monitoring, retraining trigger]
+        related: [eval-harness, metrics-vs-traces]
+
+  - id: databases
+    title: "Databases"
+    band: 2
+    concepts:
+      - id: indexing
+        name: "Indexes and query plans"
+        essential: true
+        aliases: [index, query plan, explain, b-tree, full table scan]
+        related: [n-plus-one]
+      - id: transactions
+        name: "Transactions and isolation levels"
+        essential: true
+        aliases: [transaction, acid, isolation level, dirty read, deadlock]
+        related: [connection-pooling]
+      - id: n-plus-one
+        name: "The N+1 query problem"
+        essential: true
+        aliases: [n+1, lazy loading, eager loading, join]
+        related: [indexing]
+      - id: migrations
+        name: "Schema migrations"
+        essential: true
+        aliases: [migration, alembic, schema change, backward compatible migration]
+        related: [schema-evolution]
+      - id: connection-pooling
+        name: "Connection pooling"
+        essential: false
+        aliases: [connection pool, pgbouncer, max connections, pool exhaustion]
+        related: [transactions]
+      - id: vector-stores
+        name: "Vector stores for embeddings"
+        essential: false
+        aliases: [vector database, embedding index, ann search, pgvector, faiss]
+        related: [eval-harness]
+
+  - id: reproducibility
+    title: "Reproducibility in research code"
+    band: 2
+    concepts:
+      - id: seed-control
+        name: "Random seed control"
+        essential: true
+        aliases: [seed, random state, determinism, reproducible run]
+        related: [dependency-pinning]
+      - id: dependency-pinning
+        name: "Dependency pinning and lockfiles"
+        essential: true
+        aliases: [lockfile, pinned version, requirements.txt, poetry.lock]
+        related: [containerization, seed-control]
+      - id: data-versioning
+        name: "Data versioning"
+        essential: false
+        aliases: [dvc, data version, dataset snapshot, data lineage]
+        related: [experiment-tracking]
+      - id: experiment-tracking
+        name: "Experiment tracking"
+        essential: true
+        aliases: [experiment tracking, wandb, mlflow, run comparison]
+        related: [data-versioning, model-registry]
+      - id: artifact-provenance
+        name: "Artefact provenance"
+        essential: false
+        aliases: [provenance, lineage, checksum, reproducible artifact]
+        related: [experiment-tracking]
+
+  - id: research-code-quality
+    title: "Research code quality"
+    band: 1
+    concepts:
+      - id: automated-testing
+        name: "Automated testing for research code"
+        essential: true
+        aliases: [unit test, pytest, test coverage, regression test]
+        related: [code-review]
+      - id: type-hints
+        name: "Type hints and static checking"
+        essential: false
+        aliases: [type hint, mypy, static typing, type checker]
+        related: [code-review]
+      - id: packaging
+        name: "Packaging a project properly"
+        essential: false
+        aliases: [packaging, pyproject.toml, setup.py, editable install]
+        related: [dependency-pinning]
+      - id: code-review
+        name: "Code review practices"
+        essential: true
+        aliases: [code review, pull request, review checklist]
+        related: [automated-testing]
+      - id: scripts-vs-library
+        name: "Scripts vs. reusable library code"
+        essential: false
+        aliases: [notebook sprawl, script, library, reusable function]
+        related: [packaging]

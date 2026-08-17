@@ -1,0 +1,8 @@
+{% extends "base.html" %}
+{% block title %}Link unavailable — Maluna{% endblock %}
+{% block content %}
+  <h1>{{ resource.title }} is no longer available at its original link</h1>
+  <p class="muted">A curator flagged this URL as gone. Try an archived snapshot instead:</p>
+  <p><a class="btn" href="{{ archive_url }}" target="_blank" rel="noopener">Open on the Wayback Machine</a></p>
+  <p><a href="{{ url_for('resources.view', resource_id=resource.id) }}">Back to the resource page</a></p>
+{% endblock %}

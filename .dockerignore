@@ -7,3 +7,7 @@ __pycache__/
 .pytest_cache/
 tests/
 README.md
+docs/
+app/data/*.sqlite
+*.db
+*-export.json

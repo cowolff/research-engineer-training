@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}{{ tutorial.title }} — Maluna{% endblock %}
+{% block content %}
+  <h1>{{ tutorial.title }}</h1>
+
+  {% if my_context %}
+    <div class="notice notice--flash">
+      <strong>Why you're seeing this:</strong> in "{{ my_context.scenario_title }}" you answered
+      &ldquo;{{ my_context.answer[:220] }}{% if my_context.answer|length > 220 %}&hellip;{% endif %}&rdquo;
+    </div>
+  {% endif %}
+
+  <div class="card">{{ body_html | safe }}</div>
+
+  {% if tutorial.exercise_md %}
+    <h2>Try it</h2>
+    <div class="card">{{ exercise_html | safe }}</div>
+  {% endif %}
+
+  {% if further_reading %}
+    <h2>Further reading</h2>
+    <table>
+      <thead><tr><th>Resource</th><th>Kind</th><th>Time</th></tr></thead>
+      <tbody>
+        {% for r in further_reading %}
+          <tr>
+            <td><a href="{{ url_for('resources.redirect_resource', resource_id=r.id) }}" target="_blank" rel="noopener">{{ r.title }}</a></td>
+            <td class="mono">{{ r.kind }}</td>
+            <td class="mono">{{ r.minutes }} min</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% endif %}
+
+  {% if related_info %}
+    <h2>Related concepts</h2>
+    <div class="grid grid--2">
+      {% for info in related_info %}
+        <div class="card">
+          <p><strong>{{ info.concept.name }}</strong></p>
+          {% if info.tutorial %}
+            <a href="{{ url_for('tutorials.view', slug=info.tutorial.slug) }}">Read the tutorial</a>
+          {% else %}
+            <p class="chip">not covered yet</p>
+            <form method="post" action="{{ url_for('train.start') }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <input type="hidden" name="concept_id" value="{{ info.concept.id }}">
+              <button type="submit" class="btn btn--ghost">Train this now</button>
+            </form>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+
+  {% if referenced_by %}
+    <h2>Referenced by</h2>
+    <ul>
+      {% for t in referenced_by %}
+        <li><a href="{{ url_for('tutorials.view', slug=t.slug) }}">{{ t.title }}</a></li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+{% endblock %}

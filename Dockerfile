@@ -4,13 +4,42 @@ WORKDIR /app
 COPY requirements.txt ./
 RUN pip install --no-cache-dir --prefix=/install -r requirements.txt
 
-# ── Stage 2: runtime ───────────────────────────────────────────────────────────
+# ── Stage 2: compile the resource index ────────────────────────────────────────
+# Hermetic — parses and validates resources/resources.yaml against
+# curriculum/topics.yaml and writes a read-only SQLite file. No network calls,
+# so this stage (and the app image) never depends on the sites it links to
+# being reachable at build time. See docs/IMPLEMENTATION_PLAN.md §7.2.
+FROM python:3.12-slim AS resources
+WORKDIR /build
+RUN pip install --no-cache-dir pyyaml
+COPY curriculum/ ./curriculum/
+COPY resources/ ./resources/
+COPY tools/build_resource_index.py ./tools/build_resource_index.py
+RUN python tools/build_resource_index.py \
+      --in resources/resources.yaml \
+      --curriculum curriculum/topics.yaml \
+      --out /out/resources.sqlite
+
+# ── Stage 3: runtime ───────────────────────────────────────────────────────────
 FROM python:3.12-slim
 WORKDIR /app
 COPY --from=deps /install /usr/local
-COPY app.py ./
+COPY wsgi.py ./
+COPY app/ ./app/
+COPY curriculum/ ./curriculum/
+COPY migrations/ ./migrations/
 COPY docker-entrypoint.sh ./
 RUN chmod +x docker-entrypoint.sh
+
+# Overwrites anything under app/data/ from the build context with the
+# freshly-built, validated index — the source of truth is always this stage's
+# output, never a stray local file.
+COPY --from=resources /out/resources.sqlite ./app/data/resources.sqlite
+
+# SQLite lives here; some hosting platforms run the container as an arbitrary
+# non-root UID, so this is created explicitly and made writable by any UID —
+# see README → "Other defensive choices worth keeping".
+RUN mkdir -p /data && chmod 777 /data
 
 # An arbitrary non-root UID with no matching /etc/passwd entry has no
 # HOME, which defaults to "/" — gunicorn's control socket then tries to

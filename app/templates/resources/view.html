@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}{{ resource.title }} — Maluna{% endblock %}
+{% block content %}
+  <h1>{{ resource.title }}</h1>
+  <p>
+    <span class="chip">{{ resource.kind }}</span>
+    <span class="chip">{{ resource.minutes }} min</span>
+    <span class="chip">band {{ resource.band }}</span>
+  </p>
+  <div class="card">
+    <p>{{ resource.summary }}</p>
+    {% if resource.good_for %}<p class="muted">Good for: {{ resource.good_for }}</p>{% endif %}
+    <p><a class="btn" href="{{ url_for('resources.redirect_resource', resource_id=resource.id) }}" target="_blank" rel="noopener">Open resource</a></p>
+  </div>
+
+  {% if tutorials %}
+    <h2>Cited by</h2>
+    <ul>
+      {% for t in tutorials %}<li><a href="{{ url_for('tutorials.view', slug=t.slug) }}">{{ t.title }}</a></li>{% endfor %}
+    </ul>
+  {% endif %}
+
+  <h2>Something wrong with this link?</h2>
+  <form method="post" action="{{ url_for('resources.report', resource_id=resource.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="reason">What happened?</label>
+      <textarea id="reason" name="reason" placeholder="e.g. 404, paywalled, no longer relevant"></textarea>
+    </div>
+    <button type="submit" class="btn btn--ghost">Report</button>
+  </form>
+{% endblock %}

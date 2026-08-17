@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Tutorials — Maluna{% endblock %}
+{% block content %}
+  <h1>Your tutorials</h1>
+  {% if not groups %}
+    <p class="muted">No tutorials yet — they show up here once you've missed the same essential concept a few times. Keep training.</p>
+  {% endif %}
+  {% for key, group in groups.items() %}
+    <h2>{{ group.title }}</h2>
+    <div class="grid grid--2">
+      {% for item in group['items'] %}
+        <div class="card">
+          <p><span class="chip">{{ item.read.state }}</span></p>
+          <p><a href="{{ url_for('tutorials.view', slug=item.tutorial.slug) }}"><strong>{{ item.tutorial.title }}</strong></a></p>
+          <p class="muted">{{ item.concept.name if item.concept else '' }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% endblock %}

@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Sign up — Maluna{% endblock %}
+{% block content %}
+  <h1>Create an account</h1>
+  <form method="post" class="card" style="max-width:26rem;">
+    {{ form.hidden_tag() }}
+    <div class="field">
+      {{ form.email.label }}
+      {{ form.email(placeholder="you@university.edu") }}
+      {% for e in form.email.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.password.label }}
+      {{ form.password() }}
+      {% for e in form.password.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+    </div>
+    <div class="field">
+      {{ form.confirm.label }}
+      {{ form.confirm() }}
+      {% for e in form.confirm.errors %}<div class="muted">{{ e }}</div>{% endfor %}
+    </div>
+    <button type="submit">Create account</button>
+  </form>
+  <p class="muted">Already have an account? <a href="{{ url_for('auth.login') }}">Log in</a></p>
+{% endblock %}

@@ -1,2 +1,17 @@
 flask
 gunicorn
+sqlalchemy>=2.0
+flask-sqlalchemy
+flask-migrate
+flask-login
+flask-wtf
+email-validator
+flask-limiter
+argon2-cffi
+pyyaml
+pydantic>=2.0
+mistralai
+litellm
+tenacity
+nh3
+markdown

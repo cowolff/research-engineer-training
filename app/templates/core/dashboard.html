@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — Maluna{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+  <h1>Dashboard</h1>
+
+  <div class="card">
+    <p>Ready for the next one?</p>
+    <form method="post" action="{{ url_for('train.start') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit">Start training</button>
+    </form>
+  </div>
+
+  {% if weak %}
+    <h2>Concepts you're currently struggling with</h2>
+    <p>
+      {% for row in weak %}<span class="chip chip--missed">{{ row.concept.name }}</span>{% endfor %}
+    </p>
+  {% endif %}
+
+  <h2>Mastery by topic</h2>
+  {% for group in topic_rows %}
+    <h3>{{ group.topic.title }}</h3>
+    <div class="grid grid--2">
+      {% for row in group.concepts %}
+        <div class="card">
+          <p>
+            <span class="chip {% if row.concept.essential %}chip--essential{% endif %}">
+              {{ 'essential' if row.concept.essential else 'optional' }}
+            </span>
+            <span class="chip chip--{{ {'struggling':'missed','mastered':'covered','seen':'partial','unseen':''}[row.state] }}">
+              {{ row.state }}
+            </span>
+          </p>
+          <p><strong>{{ row.concept.name }}</strong></p>
+          {% if row.mastery %}
+            <p class="muted mono">covers {{ row.mastery.covers }} · misses {{ row.mastery.misses }}</p>
+          {% endif %}
+        </div>
+      {% endfor %}
+    </div>
+  {% endfor %}
+{% endblock %}

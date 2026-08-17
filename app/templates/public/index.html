@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Maluna Engineer Training{% endblock %}
+{% block content %}
+  <h1>Maluna Engineer Training</h1>
+  <p>Scenario-based training for research engineers: generated engineering
+    problems, rubric-graded answers, and tutorials written the moment you miss
+    something important.</p>
+
+  <div class="notice">
+    Prototype: this deployment stores data on the container's local disk, which
+    atlasflow resets on every redeploy. Use <span class="mono">/export.json</span>
+    while logged in to keep a copy of your attempts and tutorials.
+  </div>
+
+  {% if current_user.is_authenticated %}
+    <p><a class="btn" href="{{ url_for('core.dashboard') }}">Go to your dashboard</a></p>
+  {% else %}
+    <p>
+      <a class="btn" href="{{ url_for('auth.register') }}">Create an account</a>
+      <a class="btn btn--ghost" href="{{ url_for('auth.login') }}">Log in</a>
+    </p>
+  {% endif %}
+{% endblock %}

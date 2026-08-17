@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}{{ scenario.title }} — Maluna{% endblock %}
+{% block content %}
+  <p>
+    <span class="chip">{{ scenario.type.replace('_', ' ') }}</span>
+    <span class="chip">band {{ scenario.band }}</span>
+  </p>
+  <h1>{{ scenario.title }}</h1>
+  <div class="card">{{ scenario.prompt_md | markdown | safe }}</div>
+
+  {% for artifact in scenario.artifacts %}
+    <p class="muted mono">{{ artifact.label }}</p>
+    <pre>{{ artifact.content }}</pre>
+  {% endfor %}
+
+  <form method="post" action="{{ url_for('train.submit_answer', scenario_id=scenario.id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <div class="field">
+      <label for="answer_text">Your answer</label>
+      <textarea id="answer_text" name="answer_text" required placeholder="Explain your reasoning — the more specific, the better the feedback."></textarea>
+    </div>
+    <button type="submit">Submit answer</button>
+  </form>
+{% endblock %}

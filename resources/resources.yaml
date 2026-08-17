@@ -1,0 +1,533 @@
+# Curated resource index — source of truth, compiled into a read-only SQLite
+# file at build time by tools/build_resource_index.py (never fetched at
+# runtime; see docs/IMPLEMENTATION_PLAN.md §7).
+#
+# `checked` is deliberately left unset on every entry in this seed: these
+# URLs were chosen for being well-known, long-stable, official documentation
+# pages, but none of them has actually been probed by tools/check_links.py
+# yet. Run that (it needs network access) before trusting this list in front
+# of a real cohort — see docs §7.2's "link checking is a CI gate" and Phase C
+# ("resource curation") in the build order, which is the human follow-up this
+# seed is meant to unblock, not replace.
+#
+# This is the "thin ~40-resource seed" the plan calls for at Phase 2b, not
+# the ~250-resource target — coverage favours getting at least one resource
+# on every essential concept over depth on any single one.
+version: 1
+resources:
+  - id: docker-get-started
+    title: "Docker: Get started"
+    url: https://docs.docker.com/get-started/
+    kind: docs
+    minutes: 45
+    band: 1
+    concepts: [containerization]
+    summary: >
+      Official walkthrough: build an image, run a container, understand layers.
+    good_for: "First contact with Docker; the image vs. container mental model."
+    rank: 1
+
+  - id: twelve-factor-net
+    title: "The Twelve-Factor App"
+    url: https://12factor.net/
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [twelve-factor, dependency-pinning, secrets-management]
+    summary: >
+      The original manifesto for config-in-env, disposable processes, and
+      dependency isolation — still the reference vocabulary for this material.
+    good_for: "Why config, secrets, and dependencies are treated as first-class deploy concerns."
+    rank: 1
+
+  - id: vllm-docs
+    title: "vLLM documentation"
+    url: https://docs.vllm.ai/
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [inference-server]
+    assumes: [containerization]
+    summary: >
+      Docs for the most widely used open-source LLM inference server —
+      continuous batching, KV cache, and deployment options.
+    good_for: "Understanding what a dedicated inference server actually does differently from calling model.generate() in a loop."
+    rank: 1
+
+  - id: triton-inference-server-docs
+    title: "NVIDIA Triton Inference Server docs"
+    url: https://docs.nvidia.com/deeplearning/triton-inference-server/
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [request-batching, gpu-scheduling]
+    summary: >
+      Docs for a production inference server with explicit dynamic batching
+      and multi-model GPU scheduling.
+    good_for: "Seeing batching and GPU scheduling as configurable, named features rather than implementation details."
+    rank: 1
+
+  - id: nginx-docs
+    title: "NGINX documentation"
+    url: https://nginx.org/en/docs/
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [load-balancing]
+    summary: "Official docs for the reverse proxy most commonly used to load-balance a web + inference stack."
+    good_for: "Concrete load-balancing and reverse-proxy configuration, not just the theory."
+    rank: 1
+
+  - id: mdn-sse
+    title: "MDN: Server-sent events"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Server-sent_events
+    kind: docs
+    minutes: 15
+    band: 2
+    concepts: [streaming-responses]
+    summary: "How SSE works as a one-way streaming channel from server to browser."
+    good_for: "The mechanism behind streaming model tokens to a chat UI."
+    rank: 1
+
+  - id: kubernetes-docs-home
+    title: "Kubernetes documentation"
+    url: https://kubernetes.io/docs/home/
+    kind: docs
+    minutes: 40
+    band: 3
+    concepts: [orchestration]
+    assumes: [containerization]
+    summary: "The full docs home for the most widely used container orchestrator."
+    good_for: "Orienting before diving into a specific Kubernetes concept."
+    rank: 1
+
+  - id: slurm-docs
+    title: "Slurm documentation"
+    url: https://slurm.schedmd.com/documentation.html
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [orchestration, gpu-scheduling]
+    summary: "Docs for the workload manager most research clusters actually run, as opposed to Kubernetes."
+    good_for: "Understanding the Slurm-vs-Kubernetes tradeoff from the Slurm side."
+    rank: 2
+
+  - id: mdn-cookies
+    title: "MDN: Using HTTP cookies"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Cookies
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [session-auth]
+    summary: "Cookie attributes — Secure, HttpOnly, SameSite — and what each actually protects against."
+    good_for: "Session-cookie security fundamentals before touching a framework's session API."
+    rank: 1
+
+  - id: jwt-io-intro
+    title: "Introduction to JSON Web Tokens"
+    url: https://jwt.io/introduction
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [session-auth]
+    summary: "What a JWT actually contains and why it's stateless, from the team that maintains jwt.io."
+    good_for: "Comparing stateless tokens against server-side sessions with a concrete example."
+    rank: 2
+
+  - id: owasp-password-storage
+    title: "OWASP Password Storage Cheat Sheet"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html
+    kind: cheatsheet
+    minutes: 15
+    band: 2
+    concepts: [password-hashing]
+    summary: "The standard reference on Argon2/bcrypt parameters, salting, and what NOT to do."
+    good_for: "A rubric-grade checklist for reviewing your own password storage code."
+    rank: 1
+
+  - id: owasp-csrf-cheatsheet
+    title: "OWASP Cross-Site Request Forgery Prevention Cheat Sheet"
+    url: https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html
+    kind: cheatsheet
+    minutes: 15
+    band: 2
+    concepts: [csrf-protection]
+    assumes: [session-auth]
+    summary: "Token-based and SameSite-based CSRF defences, and when each applies."
+    good_for: "Understanding why CSRF only matters for cookie-based auth."
+    rank: 1
+
+  - id: oauth-net
+    title: "OAuth 2.0"
+    url: https://oauth.net/2/
+    kind: docs
+    minutes: 15
+    band: 2
+    concepts: [oauth-oidc]
+    summary: "The OAuth working group's own overview of the grant types and roles."
+    good_for: "Vocabulary (authorization code, scope, grant type) before reading a provider's specific docs."
+    rank: 1
+
+  - id: mdn-webauthn
+    title: "MDN: Web Authentication API"
+    url: https://developer.mozilla.org/en-US/docs/Web/API/Web_Authentication_API
+    kind: docs
+    minutes: 15
+    band: 2
+    concepts: [mfa]
+    summary: "How passkeys/WebAuthn work as a phishing-resistant alternative to TOTP."
+    good_for: "Seeing MFA as a spectrum (TOTP vs. WebAuthn), not one technique."
+    rank: 1
+
+  - id: vault-docs
+    title: "HashiCorp Vault documentation"
+    url: https://developer.hashicorp.com/vault/docs
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [secrets-management, credential-rotation]
+    summary: "Docs for the most widely used dedicated secrets manager, including rotation and leasing."
+    good_for: "What a real secrets-management system looks like beyond '.env files'."
+    rank: 2
+
+  - id: restfulapi-net
+    title: "REST API Tutorial"
+    url: https://restfulapi.net/
+    kind: tutorial
+    minutes: 30
+    band: 1
+    concepts: [resource-modeling, api-versioning]
+    summary: "A practical, example-driven walkthrough of REST resource design conventions."
+    good_for: "Naming and structuring endpoints before you've internalised the conventions."
+    rank: 1
+
+  - id: mdn-http-status
+    title: "MDN: HTTP response status codes"
+    url: https://developer.mozilla.org/en-US/docs/Web/HTTP/Status
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [http-status-codes]
+    summary: "The full status code reference with what each one actually means."
+    good_for: "Looking up whether a given situation is a 409 or a 422 while designing an API."
+    rank: 1
+
+  - id: jsonapi-format
+    title: "JSON:API specification"
+    url: https://jsonapi.org/format/
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [pagination, error-envelopes]
+    summary: "A full spec that standardises pagination and error-object shape, not just a convention post."
+    good_for: "Seeing pagination and error envelopes specified precisely enough to implement from."
+    rank: 1
+
+  - id: stripe-idempotent-requests
+    title: "Stripe API: Idempotent requests"
+    url: https://stripe.com/docs/api/idempotent_requests
+    kind: docs
+    minutes: 15
+    band: 2
+    concepts: [idempotency, idempotent-reruns]
+    summary: "How a production payments API implements idempotency keys, and why."
+    good_for: "A concrete, battle-tested idempotency-key design to model your own on."
+    rank: 1
+
+  - id: rfc7807-problem-details
+    title: "RFC 7807: Problem Details for HTTP APIs"
+    url: https://www.rfc-editor.org/rfc/rfc7807
+    kind: docs
+    minutes: 20
+    band: 2
+    concepts: [error-envelopes]
+    summary: "The IETF standard for a machine-readable error body shape."
+    good_for: "A defensible reason to pick one error envelope shape over an ad-hoc one."
+    rank: 2
+
+  - id: wikipedia-etl
+    title: "Extract, transform, load"
+    url: "https://en.wikipedia.org/wiki/Extract,_transform,_load"
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [etl-vs-elt]
+    summary: "A neutral overview of the ETL pattern and how ELT differs."
+    good_for: "A quick, vendor-neutral grounding before reading any specific tool's docs."
+    rank: 1
+
+  - id: kafka-docs
+    title: "Apache Kafka documentation"
+    url: https://kafka.apache.org/documentation/
+    kind: docs
+    minutes: 40
+    band: 2
+    concepts: [batch-vs-stream, event-driven-etl]
+    summary: "Docs for the reference streaming platform — partitions, consumer groups, delivery semantics."
+    good_for: "Grounding 'streaming pipeline' in a specific, widely-used system's vocabulary."
+    rank: 1
+
+  - id: avro-docs
+    title: "Apache Avro documentation"
+    url: https://avro.apache.org/docs/
+    kind: docs
+    minutes: 20
+    band: 2
+    concepts: [schema-evolution, data-contracts]
+    summary: "Docs for the schema format built specifically around safe schema evolution."
+    good_for: "Seeing schema evolution rules (what's a compatible change) made concrete."
+    rank: 1
+
+  - id: github-actions-docs
+    title: "GitHub Actions documentation"
+    url: https://docs.github.com/en/actions
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [ci-cd]
+    summary: "Docs for the CI/CD system most students will actually have access to."
+    good_for: "Writing a first real pipeline rather than just reading about the concept."
+    rank: 1
+
+  - id: k8s-probes
+    title: "Kubernetes: Configure Liveness, Readiness, and Startup Probes"
+    url: https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/
+    kind: docs
+    minutes: 20
+    band: 2
+    concepts: [health-checks]
+    summary: "How a real orchestrator defines and uses health checks to route traffic."
+    good_for: "Connecting 'health check' to the exact mechanism atlasflow (and Kubernetes) actually use."
+    rank: 1
+
+  - id: terraform-docs
+    title: "Terraform documentation"
+    url: https://developer.hashicorp.com/terraform/docs
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [infra-as-code, rollback-strategy]
+    summary: "Docs for the most widely used infrastructure-as-code tool."
+    good_for: "Seeing 'declarative infra' as a concrete plan/apply workflow."
+    rank: 1
+
+  - id: python-logging-docs
+    title: "Python logging module docs"
+    url: https://docs.python.org/3/library/logging.html
+    kind: docs
+    minutes: 25
+    band: 1
+    concepts: [structured-logging]
+    summary: "The standard library's own logging docs — levels, handlers, formatters."
+    good_for: "Building structured logging out of what's already in the standard library."
+    rank: 1
+
+  - id: opentelemetry-docs
+    title: "OpenTelemetry documentation"
+    url: https://opentelemetry.io/docs/
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [metrics-vs-traces, distributed-tracing]
+    assumes: [structured-logging]
+    summary: "Docs for the vendor-neutral standard covering metrics, traces, and logs together."
+    good_for: "Seeing the 'three pillars' as one coherent instrumentation API rather than three separate tools."
+    rank: 1
+
+  - id: prometheus-overview
+    title: "Prometheus: Overview"
+    url: https://prometheus.io/docs/introduction/overview/
+    kind: docs
+    minutes: 20
+    band: 2
+    concepts: [cardinality, alerting]
+    summary: "The reference time-series metrics system's own explanation of its data model."
+    good_for: "Understanding why label cardinality specifically is what breaks a metrics system."
+    rank: 1
+
+  - id: google-sre-book-slo
+    title: "Google SRE Book: Service Level Objectives"
+    url: https://sre.google/sre-book/service-level-objectives/
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [slos]
+    summary: "The chapter that defined how most of the industry talks about SLOs and error budgets."
+    good_for: "Connecting alerting thresholds to an actual reliability target, not a gut feeling."
+    rank: 1
+
+  - id: cuda-docs
+    title: "CUDA documentation"
+    url: https://docs.nvidia.com/cuda/
+    kind: docs
+    minutes: 30
+    band: 3
+    concepts: [gpu-scheduling, quantization]
+    summary: "NVIDIA's own docs hub for CUDA — the layer underneath every GPU utilization question."
+    good_for: "Going one level below `nvidia-smi` numbers to what's actually being scheduled."
+    rank: 2
+
+  - id: lm-eval-harness-repo
+    title: "lm-evaluation-harness"
+    url: https://github.com/EleutherAI/lm-evaluation-harness
+    kind: tool
+    minutes: 20
+    band: 3
+    concepts: [eval-harness, model-drift]
+    summary: "The most widely used open-source harness for running standardized LLM benchmarks."
+    good_for: "Seeing what an eval harness actually runs, not just the concept of 'evaluation'."
+    rank: 1
+
+  - id: mlflow-docs
+    title: "MLflow documentation"
+    url: https://mlflow.org/docs/latest/index.html
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [model-registry, experiment-tracking, data-versioning, artifact-provenance]
+    summary: "Docs covering experiment tracking, a model registry, and artifact logging in one tool."
+    good_for: "Seeing experiment tracking, model registry, and provenance as one connected workflow."
+    rank: 1
+
+  - id: postgres-indexes
+    title: "PostgreSQL docs: Indexes"
+    url: https://www.postgresql.org/docs/current/indexes.html
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [indexing]
+    summary: "The official docs on index types and when the planner actually uses them."
+    good_for: "Going beyond 'add an index' to which index type and why."
+    rank: 1
+
+  - id: postgres-transaction-iso
+    title: "PostgreSQL docs: Transaction Isolation"
+    url: https://www.postgresql.org/docs/current/transaction-iso.html
+    kind: docs
+    minutes: 25
+    band: 2
+    concepts: [transactions]
+    summary: "The official reference on isolation levels and the anomalies each one prevents."
+    good_for: "Precise vocabulary for 'dirty read' / 'phantom read' instead of hand-waving."
+    rank: 1
+
+  - id: sqlalchemy-orm-docs
+    title: "SQLAlchemy ORM documentation"
+    url: https://docs.sqlalchemy.org/en/20/orm/
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [n-plus-one]
+    summary: "Docs for the ORM this app itself uses, including relationship loading strategies."
+    good_for: "Seeing eager vs. lazy loading in the exact library this project is built on."
+    rank: 1
+
+  - id: alembic-docs
+    title: "Alembic documentation"
+    url: https://alembic.sqlalchemy.org/en/latest/
+    kind: docs
+    minutes: 30
+    band: 2
+    concepts: [migrations]
+    summary: "Docs for the migration tool this app itself uses to manage schema changes."
+    good_for: "Learning migrations against the exact tool already running in this codebase."
+    rank: 1
+
+  - id: pgbouncer-home
+    title: "PgBouncer"
+    url: https://www.pgbouncer.org/
+    kind: tool
+    minutes: 15
+    band: 2
+    concepts: [connection-pooling]
+    summary: "The most widely deployed Postgres connection pooler, with a concise explanation of why pooling matters."
+    good_for: "Understanding why an app can't just open a new DB connection per request at scale."
+    rank: 1
+
+  - id: pgvector-repo
+    title: "pgvector"
+    url: https://github.com/pgvector/pgvector
+    kind: tool
+    minutes: 15
+    band: 2
+    concepts: [vector-stores]
+    summary: "The most widely used vector-search extension for Postgres."
+    good_for: "Seeing a vector store as 'a Postgres extension', not a separate exotic system."
+    rank: 1
+
+  - id: faiss-repo
+    title: "Faiss"
+    url: https://github.com/facebookresearch/faiss
+    kind: tool
+    minutes: 15
+    band: 3
+    concepts: [vector-stores]
+    summary: "Meta's library for efficient similarity search, the dedicated alternative to a DB extension."
+    good_for: "Comparing a dedicated ANN library against a Postgres extension for vector search."
+    rank: 2
+
+  - id: numpy-random-docs
+    title: "NumPy: Random sampling"
+    url: https://numpy.org/doc/stable/reference/random/index.html
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [seed-control]
+    summary: "The official docs on NumPy's Generator API and seeding."
+    good_for: "Doing seed control correctly in the library most research code actually uses."
+    rank: 1
+
+  - id: pip-docs-home
+    title: "pip documentation"
+    url: https://pip.pypa.io/en/stable/
+    kind: docs
+    minutes: 15
+    band: 1
+    concepts: [dependency-pinning]
+    summary: "Official pip docs, including requirements files and version specifiers."
+    good_for: "The mechanics of pinning before reaching for a lockfile tool."
+    rank: 1
+
+  - id: pytest-docs-home
+    title: "pytest documentation"
+    url: https://docs.pytest.org/en/stable/
+    kind: docs
+    minutes: 25
+    band: 1
+    concepts: [automated-testing]
+    summary: "Docs for the testing framework most Python research code should be using."
+    good_for: "Going from 'I should write tests' to an actual first test file."
+    rank: 1
+
+  - id: python-typing-docs
+    title: "Python typing module docs"
+    url: https://docs.python.org/3/library/typing.html
+    kind: docs
+    minutes: 20
+    band: 1
+    concepts: [type-hints]
+    summary: "The standard library reference for type hint syntax."
+    good_for: "Looking up a specific typing construct while adding hints to existing code."
+    rank: 1
+
+  - id: packaging-python-org
+    title: "Python Packaging User Guide"
+    url: https://packaging.python.org/en/latest/
+    kind: docs
+    minutes: 30
+    band: 1
+    concepts: [packaging, scripts-vs-library]
+    summary: "The official, currently-maintained guide to packaging a Python project properly."
+    good_for: "Turning a folder of scripts into an installable package."
+    rank: 1
+
+  - id: google-eng-practices-review
+    title: "Google Engineering Practices: Code Review"
+    url: https://google.github.io/eng-practices/review/
+    kind: docs
+    minutes: 30
+    band: 1
+    concepts: [code-review]
+    summary: "Google's published internal guidelines for both writing and reviewing code changes."
+    good_for: "A concrete standard for what a good code review comment looks like, from either side."
+    rank: 1

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Cohort — Maluna{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
+{% block content %}
+  <h1>Cohort overview</h1>
+  <p class="muted">Aggregate only — no individual student's answers appear here.</p>
+  <table>
+    <thead>
+      <tr><th>Concept</th><th>Students</th><th>Struggling</th><th>Mastered</th><th>Avg. consecutive misses</th><th>Tutorial</th></tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+        <tr>
+          <td>
+            {{ row.concept.name }}
+            {% if row.concept.essential %}<span class="chip chip--essential">essential</span>{% endif %}
+          </td>
+          <td class="mono">{{ row.n_students }}</td>
+          <td class="mono">{{ row.n_struggling }}</td>
+          <td class="mono">{{ row.n_mastered }}</td>
+          <td class="mono">{{ row.avg_consecutive_misses }}</td>
+          <td>
+            {% if row.tutorial %}
+              <a href="{{ url_for('tutorials.view', slug=row.tutorial.slug) }}">{{ row.n_read }}/{{ row.n_assigned }} read</a>
+            {% else %}
+              <span class="muted">none yet</span>
+            {% endif %}
+          </td>
+        </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+{% endblock %}

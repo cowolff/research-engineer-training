@@ -1,0 +1,39 @@
+<div id="job-status"
+     {% if job.status in ('queued', 'running') %}
+       hx-get="{{ url_for('jobs.status', job_id=job.id) }}" hx-trigger="every 1.5s" hx-swap="outerHTML"
+     {% endif %}>
+  {% if job.status == 'queued' %}
+    <p class="muted">Queued&hellip;</p>
+  {% elif job.status == 'running' %}
+    <p class="muted">Working on it&hellip; this can take up to a minute.</p>
+  {% elif job.status == 'done' %}
+    {% if job.kind == 'generate_scenario' %}
+      <p><a class="btn" href="{{ url_for('train.view_scenario', scenario_id=job.result.scenario_id) }}">Start</a></p>
+    {% elif job.kind == 'grade_attempt' %}
+      <p><a class="btn" href="{{ url_for('train.feedback', scenario_id=job.result.scenario_id) }}">See feedback</a></p>
+      {% if job.result.triggered %}
+        <div class="notice notice--flash">
+          {% for t in job.result.triggered %}
+            {% if t.mode == 'existing' %}
+              A tutorial is ready for this gap — see it in your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab.
+            {% elif t.mode == 'generating' or t.mode == 'pending' %}
+              We noticed a gap and are writing a tutorial for it — check your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab shortly.
+            {% endif %}
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% elif job.kind == 'generate_tutorial' %}
+      <p>New tutorial ready: <a href="{{ url_for('tutorials.view', slug=job.result.tutorial_slug) }}">open it</a></p>
+    {% endif %}
+  {% elif job.status == 'failed' %}
+    <div class="notice notice--error">Generation failed: {{ job.error }}</div>
+    {% if job.kind == 'generate_scenario' %}
+      <form method="post" action="{{ url_for('train.start') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="btn btn--ghost">Try again</button>
+      </form>
+    {% elif job.kind == 'grade_attempt' and retry_scenario_id %}
+      <a class="btn btn--ghost" href="{{ url_for('train.view_scenario', scenario_id=retry_scenario_id) }}">Back to the scenario</a>
+    {% endif %}
+  {% endif %}
+</div>
