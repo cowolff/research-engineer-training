@@ -19,7 +19,8 @@ LLM: **Mistral (`mistral-medium`)**. Host: **Atlasflow, single Docker container.
 | Replicas | **Exactly 1** | SQLite writer, in-process job worker, and in-memory rate limiter are all single-node. |
 | Gunicorn | **1 worker, 4 gthreads** | One SQLite writer process. LLM work runs off-request in a thread pool. |
 | Tutorials | **Canonical per concept, shared across students** | Generated once per concept from the first student who triggers it; every later trigger for that concept reuses the row for free. Personalisation moves from "baked into the text" to "rendered live" — see §6.2. |
-| Instructor role | **`INSTRUCTOR_EMAILS` runtime var, read-only cohort view** | No admin UI. An email on that list gets `role=instructor` on login and can see `/cohort` — aggregate mastery and tutorial uptake across all students. See §6.4. |
+| Instructor role | **`INSTRUCTOR_EMAILS` runtime var, read-only cohort view** | An email on that list gets `role=instructor` on login and can see `/cohort` — aggregate mastery and tutorial uptake across all students. See §6.4. |
+| Admin role | **`ADMIN_EMAILS` runtime var, read-only `/admin` dashboard** | Separate list, superset of instructor. Cohort-wide totals, usage cost, and per-student activity percentiles — no per-student answer text. See §6.5. |
 | Cohort size / budget | **Left open — `MAX_LLM_CALLS_PER_DAY` is the knob** | No assumption baked in; the operator sets the per-user cap via a Runtime variable once cohort size is known. |
 
 ---
@@ -699,6 +700,34 @@ concept with high misses and no tutorial yet, or a tutorial with a low
 read-to-generate ratio, is exactly what an instructor (or the curriculum
 author) should look at next.
 
+### 6.5 Admin dashboard
+
+A second, separate `ADMIN_EMAILS` runtime variable (comma-separated, same
+mechanism as §6.4) grants `role=admin` on login. `is_admin` implies
+`is_instructor` — an admin sees `/cohort` too — but the reverse doesn't hold,
+so a TA can be added to `INSTRUCTOR_EMAILS` without also getting cohort-wide
+cost numbers. Still no promotion UI; `flask promote-admin <email>` exists for
+an account that registered before being added to the list, mirroring `flask
+promote-instructor`.
+
+`GET /admin` (admin-only, `403` for everyone else) is cohort-wide and
+aggregate, same "no per-student answer text" rule as `/cohort`:
+
+- totals: students, tutorials generated, scenarios generated, attempts
+  submitted;
+- cohort-wide `llm_calls` rollup — calls, tokens, estimated cost — the same
+  numbers `/admin/usage` shows for one user, summed across everyone;
+- a per-student activity distribution for scenarios generated and tutorials
+  read: students are sorted by count and split into equal-sized percentile
+  buckets (deciles, or fewer for a small cohort), each row reporting that
+  bucket's student count, count range, share of the cohort total, and
+  cumulative share. This is what answers "which percentile is responsible
+  for how much" — usage here is typically a handful of active students plus
+  a long tail at zero, which a bucket-by-value-range histogram would hide
+  by dumping nearly everyone into one bucket.
+
+`app/core/analytics.py` computes this; `app/core/routes.py` just renders it.
+
 ---
 
 ## 7. Resource index
@@ -874,6 +903,7 @@ speculatively.
 | `POST /resources/<resource_id>/report` | user | "Dead or unhelpful" — writes the curation queue. |
 | `GET /admin/usage` | user (own data) | `llm_calls` rollup: calls, tokens, estimated cost. |
 | `GET /cohort` | instructor | Aggregate mastery and tutorial uptake across all students (§6.4). `403` for students. |
+| `GET /admin` | admin | Cohort-wide totals, usage cost, and per-student activity percentiles (§6.5). `403` for everyone else. |
 
 Ownership is checked on every `<id>` route (`404`, not `403`, on mismatch).
 
@@ -916,7 +946,7 @@ boot, every redeploy silently logs everyone out on top of losing the data.
 | XSS from LLM output | All markdown rendered through `nh3` with raw HTML off; log artefacts escaped into `<pre>`; a CSP header without `unsafe-inline` (htmx and the graph SVG need no inline script). |
 | Secrets | Runtime variables only. Startup assertion listing any missing name. No secret ever logged; `llm_calls` stores no prompt text by default. |
 | Enumeration | Register and password-reset responses do not reveal whether an email exists. |
-| Privilege escalation | `role` is never a client-supplied field — set only server-side against `INSTRUCTOR_EMAILS` on login. `/cohort` checks `current_user.role` and returns aggregates only, never a student's answer text (§6.4). |
+| Privilege escalation | `role` is never a client-supplied field — set only server-side against `INSTRUCTOR_EMAILS`/`ADMIN_EMAILS` on login. `/cohort` and `/admin` check `current_user.role` and return aggregates only, never a student's answer text (§6.4, §6.5). |
 
 ---
 
@@ -1011,6 +1041,7 @@ and by the fact that the container has no build step.
 | `RESOURCE_INDEX_PATH` | Runtime | no | `app/data/resources.sqlite` | Read-only index baked in at build (§7.2). |
 | `RESOURCE_SHORTLIST_MAX` | Runtime | no | `8` | Resources shown to the tutorial prompt. |
 | `INSTRUCTOR_EMAILS` | Runtime | no | — (empty) | Comma-separated list; matching emails get `role=instructor` on login (§6.4). |
+| `ADMIN_EMAILS` | Runtime | no | — (empty) | Comma-separated list; matching emails get `role=admin` on login — superset of instructor, plus `/admin` (§6.5). |
 | `LOG_LEVEL` | Runtime | no | `INFO` | |
 | `PORT` | — | no | `3000` | Local dev only; Atlasflow always probes 3000. |
 

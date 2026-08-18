@@ -16,8 +16,13 @@ _hasher = PasswordHasher()
 
 
 def _role_for_email(email):
-    emails = current_app.app_config.instructor_emails
-    return "instructor" if email.lower() in emails else "student"
+    email = email.lower()
+    cfg = current_app.app_config
+    if email in cfg.admin_emails:
+        return "admin"
+    if email in cfg.instructor_emails:
+        return "instructor"
+    return "student"
 
 
 def _record_session(user):

@@ -54,6 +54,12 @@ To see an instructor's cohort view, set `INSTRUCTOR_EMAILS=you@example.com`
 before registering with that address (or run
 `flask promote-instructor you@example.com` after the fact).
 
+For the cross-cohort `/admin` dashboard (student counts, tutorial/scenario
+totals, cohort-wide LLM usage, per-student activity percentiles), set
+`ADMIN_EMAILS=you@example.com` instead (or `flask promote-admin
+you@example.com`). Admin includes everything the instructor cohort view
+shows, plus cost numbers, so keep that list smaller than `INSTRUCTOR_EMAILS`.
+
 ### Local dev over plain HTTP
 
 atlasflow always terminates TLS upstream, so session cookies are `Secure` by
@@ -173,7 +179,8 @@ you also add it as a Runtime variable. Every secret or config value this app
 reads at request/startup time (`SECRET_KEY`, `MISTRAL_API_KEY`,
 `INSTRUCTOR_EMAILS`, ...) needs to go in **Runtime Variables** — putting it in
 Build Variables only will crash the app at startup with a config error that
-looks unrelated to this distinction. Full list: IMPLEMENTATION_PLAN.md §13.
+looks unrelated to this distinction. `ADMIN_EMAILS` needs the same treatment
+as `INSTRUCTOR_EMAILS`. Full list: IMPLEMENTATION_PLAN.md §13.
 
 `SECRET_KEY` specifically must be a **stable** Runtime variable, not generated
 at boot — otherwise every redeploy logs everyone out on top of the data reset

@@ -69,6 +69,21 @@ def register_cli(app):
         db.session.commit()
         click.echo(f"{email} is now an instructor.")
 
+    @app.cli.command("promote-admin")
+    @click.argument("email")
+    def promote_admin_cmd(email):
+        """Manually flip a user's role to admin. Normally handled by the
+        ADMIN_EMAILS runtime variable on login; this is for a user who
+        registered before being added to that list."""
+        from app.models import User
+
+        user = db.session.query(User).filter_by(email=email.strip().lower()).first()
+        if not user:
+            raise click.ClickException(f"No user with email {email}")
+        user.role = "admin"
+        db.session.commit()
+        click.echo(f"{email} is now an admin.")
+
     @app.cli.command("check-scenario-generation")
     @click.option("--count", default=20, help="How many scenarios to generate back-to-back.")
     @click.option("--email", default="scenario-check@local.test", help="Throwaway user the scenarios are generated for.")

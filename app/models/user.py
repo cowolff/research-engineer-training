@@ -43,7 +43,11 @@ class User(db.Model):
 
     @property
     def is_instructor(self):
-        return self.role == "instructor"
+        return self.role in ("instructor", "admin")
+
+    @property
+    def is_admin(self):
+        return self.role == "admin"
 
 
 class AuthSession(db.Model):

@@ -126,6 +126,9 @@ th { color: var(--ink-2); font-weight: 600; font-size: .78rem; text-transform: u
 .grid { display: grid; gap: 1rem; }
 .grid--2 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
 
+.meter { background: var(--surface-2); border-radius: 4px; height: 6px; overflow: hidden; }
+.meter__fill { background: var(--accent); height: 100%; }
+
 /* --- chat transcript ------------------------------------------------------ */
 .chat { display: flex; flex-direction: column; gap: 1rem; margin-bottom: 1.75rem; }
 .msg { display: flex; flex-direction: column; gap: .3rem; max-width: 85%; }

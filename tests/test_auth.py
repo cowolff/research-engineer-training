@@ -58,6 +58,22 @@ def test_instructor_role_assigned_from_config(client, app):
         assert user.role == "instructor"
 
 
+def test_admin_role_assigned_from_config(client, app):
+    app.app_config.admin_emails = {"root@example.com"}
+
+    r = client.get("/register")
+    token = _csrf(r.get_data(as_text=True))
+    client.post(
+        "/register",
+        data={"csrf_token": token, "email": "root@example.com", "password": "correcthorsebatterystaple", "confirm": "correcthorsebatterystaple"},
+    )
+    with app.app_context():
+        user = db.session.query(User).filter_by(email="root@example.com").one()
+        assert user.role == "admin"
+        assert user.is_admin
+        assert user.is_instructor
+
+
 def test_anonymous_cannot_reach_dashboard(client):
     r = client.get("/dashboard", follow_redirects=False)
     assert r.status_code == 302

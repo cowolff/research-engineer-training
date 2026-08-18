@@ -76,6 +76,20 @@ def usage():
     )
 
 
+@bp.get("/admin")
+@login_required
+def admin_dashboard():
+    """Cross-cohort numbers for whoever is listed in ADMIN_EMAILS (docs §6.5):
+    student/tutorial/scenario totals, cohort-wide LLM usage, and a per-student
+    activity distribution — aggregate only, no per-student answer text."""
+    if not current_user.is_admin:
+        abort(403)
+
+    from app.core.analytics import admin_overview
+
+    return render_template("core/admin.html", **admin_overview())
+
+
 @bp.get("/cohort")
 @login_required
 def cohort():

@@ -1,0 +1,33 @@
+{% macro distribution_table(distribution, unit_label) %}
+  {% if distribution %}
+    <table>
+      <thead>
+        <tr>
+          <th>Percentile</th>
+          <th>Students</th>
+          <th>Range</th>
+          <th>Total {{ unit_label }}</th>
+          <th>% of total</th>
+          <th>Cumulative %</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in distribution %}
+          <tr>
+            <td class="mono">{{ row.label }}</td>
+            <td class="mono">{{ row.n_students }}</td>
+            <td class="mono">{{ row.min }}–{{ row.max }}</td>
+            <td class="mono">{{ row.sum }}</td>
+            <td class="mono">
+              {{ "%.1f"|format(row.pct_of_total) }}%
+              <div class="meter"><div class="meter__fill" style="width: {{ row.pct_of_total }}%;"></div></div>
+            </td>
+            <td class="mono">{{ "%.1f"|format(row.cumulative_pct) }}%</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p class="muted">No students yet.</p>
+  {% endif %}
+{% endmacro %}

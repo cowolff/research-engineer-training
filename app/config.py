@@ -130,6 +130,17 @@ class Config:
             e.strip().lower() for e in instructor_emails.split(",") if e.strip()
         }
 
+        # Separate from INSTRUCTOR_EMAILS: admins get the cross-cohort
+        # `/admin` dashboard (student counts, tutorial/scenario totals, usage
+        # distribution) on top of everything an instructor can see — see
+        # docs §6.5. Kept as its own list rather than reusing the instructor
+        # one so a teaching assistant can get the cohort view without also
+        # getting cohort-wide cost numbers.
+        admin_emails = env.get("ADMIN_EMAILS", "")
+        self.admin_emails = {
+            e.strip().lower() for e in admin_emails.split(",") if e.strip()
+        }
+
         self.log_level = env.get("LOG_LEVEL", "INFO")
         self.port = int(env.get("PORT", "3000"))
 

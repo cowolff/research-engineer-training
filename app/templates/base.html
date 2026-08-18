@@ -17,6 +17,7 @@
       <a href="{{ url_for('resources.browse') }}">Resources</a>
       <a href="{{ url_for('core.usage') }}">Usage</a>
       {% if current_user.is_instructor %}<a href="{{ url_for('core.cohort') }}">Cohort</a>{% endif %}
+      {% if current_user.is_admin %}<a href="{{ url_for('core.admin_dashboard') }}">Admin</a>{% endif %}
     {% endif %}
     <div class="nav__spacer"></div>
     {% if current_user.is_authenticated %}
