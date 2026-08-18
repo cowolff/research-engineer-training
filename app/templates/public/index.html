@@ -1,23 +1,185 @@
 {% extends "base.html" %}
-{% block title %}Maluna Engineer Training{% endblock %}
+{% block title %}Maia Engineer Training{% endblock %}
 {% block content %}
-  <h1>Maluna Engineer Training</h1>
-  <p>Scenario-based training for research engineers: generated engineering
-    problems, rubric-graded answers, and tutorials written the moment you miss
-    something important.</p>
 
-  <div class="notice">
-    Prototype: this deployment stores data on the container's local disk, which
-    atlasflow resets on every redeploy. Use <span class="mono">/export.json</span>
-    while logged in to keep a copy of your attempts and tutorials.
-  </div>
+  <header class="hero">
+    <p class="hero__eyebrow">Scenario-based engineering training</p>
+    <h1 class="hero__title">Maia</h1>
+    <p class="hero__lede">Cognitive Science teaches you to reason about systems
+      long before you ever have to build one. Maia closes that gap: it puts you
+      in front of realistic engineering situations &mdash; a stack to design, a
+      broken deployment to diagnose, a colleague's plan to pull apart &mdash;
+      and works through each one with you until you can defend your answer.</p>
+    <p class="hero__note">Built for Cognitive Science students becoming AI
+      research engineers.</p>
+    <div class="hero__actions">
+      {% if current_user.is_authenticated %}
+        <a class="btn" href="{{ url_for('core.dashboard') }}">Go to your dashboard</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('auth.register') }}">Create an account</a>
+        <a class="btn btn--ghost" href="{{ url_for('auth.login') }}">Log in</a>
+      {% endif %}
+    </div>
+  </header>
 
-  {% if current_user.is_authenticated %}
-    <p><a class="btn" href="{{ url_for('core.dashboard') }}">Go to your dashboard</a></p>
-  {% else %}
-    <p>
-      <a class="btn" href="{{ url_for('auth.register') }}">Create an account</a>
-      <a class="btn btn--ghost" href="{{ url_for('auth.login') }}">Log in</a>
-    </p>
-  {% endif %}
+  <section class="section">
+    <h2 class="section__title">How a session works</h2>
+    <p class="section__lede">One scenario, start to finish. Nothing here is a
+      multiple-choice quiz: every answer you give is free text, and the whole
+      thing is a conversation.</p>
+
+    <ol class="steps">
+      <li class="step">
+        <h3 class="step__title">It decides what to test &mdash; in plain code, not by asking a model</h3>
+        <p>A deterministic selector weights concepts you have never seen,
+          concepts you missed last time, and concepts you were recently given a
+          tutorial on, then draws two to four of them from a single topic. What
+          you practise is never left to a model's whim, and difficulty ramps
+          with your rolling score.</p>
+      </li>
+      <li class="step">
+        <h3 class="step__title">A scenario is generated, with its artifacts</h3>
+        <p>It arrives as one of five shapes: an open architecture question, a
+          plausible-but-flawed design to review, a forced trade-off to defend, a
+          concept to explain in context, or a debugging exercise in which the
+          model fabricates the evidence &mdash; an OOM kill in
+          <span class="mono">docker logs</span>, <span class="mono">nvidia-smi</span>
+          sitting at 0&nbsp;% utilisation, a stack trace, a
+          <span class="mono">CrashLoopBackOff</span> &mdash; and leaves you to
+          work out what happened.</p>
+      </li>
+      <li class="step">
+        <h3 class="step__title">The rubric is fixed before you answer</h3>
+        <p>Every scenario is stored together with the concepts it grades and
+          which of them are essential. That list is written when the scenario is
+          generated, so nothing about the marking can be quietly reshaped around
+          whatever you happen to write.</p>
+      </li>
+      <li class="step">
+        <h3 class="step__title">You work it as a conversation, and the questions are nudges</h3>
+        <p>Three replies by default. Each turn reacts to what you actually
+          wrote, names the thing you got right or wrong, and then asks one
+          question aimed at a rubric item you have not reached yet. It points at
+          the evidence or the consequence and leaves the cause to you:
+          <em>the GPU is at 4&nbsp;% while latency is 30&nbsp;s &mdash; what
+          would have to be true for both at once?</em> The conversation closes
+          early once the essentials are covered, rather than padding out the
+          turn budget.</p>
+      </li>
+      <li class="step">
+        <h3 class="step__title">The ledger records how you got there</h3>
+        <p>Covered on your own counts towards mastery. Covered only after a
+          nudge counts as neither progress nor a gap &mdash; you got there with
+          help, so the concept simply comes round again later. Never covered is
+          a miss. And if the grading is wrong, every missed item has an
+          <em>I did cover this</em> button that corrects the record.</p>
+      </li>
+      <li class="step">
+        <h3 class="step__title">A tutorial appears once a gap is real</h3>
+        <p>Miss the same essential concept three times across three different
+          scenarios and Maia writes a tutorial from your own missed attempts,
+          then re-tests that concept later to check the gap actually closed.
+          Tutorials are canonical per concept, so a cohort builds a shared
+          library as it trains.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="section">
+    <h2 class="section__title">Four things it refuses to do</h2>
+    <p class="section__lede">The design commitments that the rest of the tool is
+      arranged around.</p>
+
+    <div class="grid grid--pair">
+      <div class="card">
+        <h3 class="card__title">Grade you against a moving target</h3>
+        <p>The rubric exists before your answer does, and is never revised in
+          light of it.</p>
+      </div>
+      <div class="card">
+        <h3 class="card__title">Hand you the answer</h3>
+        <p>A nudge names the area at most, never the cause. Even the final turn,
+          which is allowed to be broad, stops short of saying it for you.</p>
+      </div>
+      <div class="card">
+        <h3 class="card__title">Leak the answer through the glossary</h3>
+        <p>Beside the scenario sits a small chat for vocabulary alone &mdash;
+          what p95 latency is, what a digest is. It is shown the scenario text
+          and nothing else: no rubric, no target concepts, no transcript. There
+          is nothing in it to give away, and what you ask it can neither earn
+          you credit nor cost you any.</p>
+      </div>
+      <div class="card">
+        <h3 class="card__title">Cite a link it made up</h3>
+        <p>Tutorials draw on a curated resource index compiled into the build.
+          The model chooses from a shortlist by id and the app resolves ids to
+          URLs at render time, so it never emits a URL and cannot invent one.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section__title">What you practise</h2>
+    <p class="section__lede">Ten topics, each broken into the concepts a
+      scenario can target. Editorial summary of
+      <span class="mono">curriculum/topics.yaml</span>, which is the real
+      source.</p>
+    <div class="topics">
+      <span class="chip">Standing up a research demonstrator</span>
+      <span class="chip">Authentication &amp; authorization</span>
+      <span class="chip">REST API design</span>
+      <span class="chip">Data pipelines &amp; ETL</span>
+      <span class="chip">Deployment &amp; operations</span>
+      <span class="chip">Observability</span>
+      <span class="chip">ML infrastructure</span>
+      <span class="chip">Databases</span>
+      <span class="chip">Reproducibility in research code</span>
+      <span class="chip">Research code quality</span>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section__title">Where the name comes from</h2>
+    <div class="origin">
+      <div class="origin__glyph" aria-hidden="true">
+        <div class="origin__word">μαῖα</div>
+        <div class="origin__translit">maia</div>
+      </div>
+      <div class="origin__body">
+        <p><strong>μαῖα</strong> is Greek for
+          <em>midwife</em>. In Plato's <em>Theaetetus</em>, Socrates describes
+          his own method as exactly that: he claims no wisdom of his own to pass
+          along, only the craft of helping someone deliver an understanding they
+          were already carrying. Later readers named the technique after the
+          image &mdash; <em>maieutic</em>, from
+          μαιευτικός,
+          &ldquo;of midwifery.&rdquo;</p>
+        <p>That is the mechanic this whole tool is built on. It does not tell you
+          the answer and then ask you to recall it; it asks the question that
+          makes you reach for it yourself, and it only counts a concept as
+          learned when you are the one who said it. The single place it will
+          answer you plainly is the glossary chat, and that is walled off from
+          your grade for precisely the same reason.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2 class="section__title">Prototype status</h2>
+    <div class="notice">
+      This deployment stores its data on the container's local disk, which
+      atlasflow resets on every redeploy. Use
+      <span class="mono">/export.json</span> while logged in to keep a copy of
+      your attempts and tutorials.
+    </div>
+    <div class="hero__actions">
+      {% if current_user.is_authenticated %}
+        <a class="btn" href="{{ url_for('core.dashboard') }}">Go to your dashboard</a>
+      {% else %}
+        <a class="btn" href="{{ url_for('auth.register') }}">Create an account</a>
+        <a class="btn btn--ghost" href="{{ url_for('auth.login') }}">Log in</a>
+      {% endif %}
+    </div>
+  </section>
+
 {% endblock %}

@@ -12,7 +12,7 @@ class _FabricatingProvider:
 
     model_name = "fabricator"
 
-    def raw_complete(self, system, user, schema=None):
+    def raw_complete(self, system, user, schema=None, on_delta=None):
         spec = {
             "title": "Docker basics",
             "body_md": "Some content. [[res:totally-made-up]] [[res:docker-get-started]]",

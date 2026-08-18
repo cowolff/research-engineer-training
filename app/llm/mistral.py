@@ -13,6 +13,13 @@ implementation time" note:
 - transient HTTP failures raise `mistralai.client.errors.SDKError`, which
   carries `.raw_response.status_code` — that's what the retry loop below
   checks against 429/5xx.
+- `client.chat.stream(...)` takes the same arguments and returns an
+  `EventStream[CompletionEvent]`; each event's `.data` is a `CompletionChunk`
+  whose `.choices[0].delta.content` holds that chunk's text, and whose
+  `.usage` is populated on the final chunk only. Used when a caller passes
+  `on_delta` (§5.7) — the streamed pieces are concatenated back into exactly
+  the same string the blocking call returns, so nothing downstream can tell
+  the difference.
 
 Re-verify this against Mistral's current docs if the SDK major version changes.
 """
@@ -37,7 +44,7 @@ class MistralProvider:
         self._timeout_ms = int(timeout_seconds * 1000)
         self._temperature = temperature
 
-    def raw_complete(self, system, user, schema=None):
+    def raw_complete(self, system, user, schema=None, on_delta=None):
         # `schema` is accepted for protocol compatibility with
         # app/llm/client.py but not yet used here — Mistral's own API
         # supports the same json_schema response-format convention
@@ -57,21 +64,25 @@ class MistralProvider:
         for attempt in range(_MAX_RETRIES + 1):
             started = time.monotonic()
             try:
-                response = self._client.chat.complete(
-                    model=self.model_name,
-                    messages=messages,
-                    response_format={"type": "json_object"},
-                    timeout_ms=self._timeout_ms,
+                request = {
+                    "model": self.model_name,
+                    "messages": messages,
+                    "response_format": {"type": "json_object"},
+                    "timeout_ms": self._timeout_ms,
                     **kwargs,
-                )
+                }
+                if on_delta is None:
+                    text, prompt_tokens, completion_tokens = self._complete(request)
+                else:
+                    text, prompt_tokens, completion_tokens = self._stream(request, on_delta)
+
                 latency_ms = int((time.monotonic() - started) * 1000)
-                text = response.choices[0].message.content or ""
                 usage = LLMUsage(
-                    prompt_tokens=response.usage.prompt_tokens or 0,
-                    completion_tokens=response.usage.completion_tokens or 0,
+                    prompt_tokens=prompt_tokens,
+                    completion_tokens=completion_tokens,
                     latency_ms=latency_ms,
                     cost_estimate_cents=_estimate_cost_cents(
-                        self.model_name, response.usage.prompt_tokens or 0, response.usage.completion_tokens or 0
+                        self.model_name, prompt_tokens, completion_tokens
                     ),
                 )
                 return text, usage
@@ -83,6 +94,41 @@ class MistralProvider:
                 time.sleep((2**attempt) * 0.5 + random.uniform(0, 0.5))
 
         raise last_exc  # pragma: no cover - loop always returns or raises above
+
+    def _complete(self, request):
+        response = self._client.chat.complete(**request)
+        return (
+            response.choices[0].message.content or "",
+            response.usage.prompt_tokens or 0,
+            response.usage.completion_tokens or 0,
+        )
+
+    def _stream(self, request, on_delta):
+        """Same request, delivered incrementally so the student watches the
+        reply being written (§5.7). The concatenated result is byte-identical
+        to what `_complete` would have returned, which is what lets the
+        streaming and non-streaming paths share everything downstream — only
+        `usage` needs care, since it rides on the final chunk rather than the
+        envelope."""
+        pieces = []
+        prompt_tokens = 0
+        completion_tokens = 0
+
+        for event in self._client.chat.stream(**request):
+            chunk = event.data
+            usage = getattr(chunk, "usage", None)
+            if usage is not None:
+                prompt_tokens = usage.prompt_tokens or prompt_tokens
+                completion_tokens = usage.completion_tokens or completion_tokens
+            if not chunk.choices:
+                continue
+            delta = chunk.choices[0].delta.content or ""
+            if not delta:
+                continue
+            pieces.append(delta)
+            on_delta(delta)
+
+        return "".join(pieces), prompt_tokens, completion_tokens
 
 
 # Rough, deliberately conservative estimates for the /admin/usage teaching

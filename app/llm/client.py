@@ -12,6 +12,7 @@ from pydantic import ValidationError
 
 from app.db import db
 from app.models import LLMCall
+from app.llm.streaming import current_sink
 
 logger = logging.getLogger("app.llm")
 
@@ -42,8 +43,8 @@ def _log_call(user_id, purpose, model_name, ok, usage, error=""):
     db.session.commit()
 
 
-def _try_once(provider, system, user, schema):
-    text, usage = provider.raw_complete(system, user, schema=schema)
+def _try_once(provider, system, user, schema, on_delta):
+    text, usage = provider.raw_complete(system, user, schema=schema, on_delta=on_delta)
     return json.loads(text), usage
 
 
@@ -55,10 +56,19 @@ def generate_structured(provider, purpose, system, user, schema, user_id):
     validation here — a provider that supports schema-constrained decoding
     (docs §5.1) uses it to make the requested shape the *only* one the model
     can produce, rather than relying purely on this function's after-the-fact
-    check and one retry to catch a wrong shape."""
+    check and one retry to catch a wrong shape.
+
+    If a display sink is installed for this call (app/llm/streaming.py), raw
+    generated text is forwarded to it as it arrives so the student can watch
+    the reply being written (§5.7). That is strictly a side channel: the
+    validated object returned here is unaffected by whether anyone is
+    watching, and a call with no sink behaves exactly as it did before."""
+    sink = current_sink()
+    on_delta = sink.feed if sink is not None else None
+
     with _semaphore:
         try:
-            data, usage = _try_once(provider, system, user, schema)
+            data, usage = _try_once(provider, system, user, schema, on_delta)
             result = schema.model_validate(data)
             _log_call(user_id, purpose, provider.model_name, True, usage)
             return result
@@ -66,13 +76,18 @@ def generate_structured(provider, purpose, system, user, schema, user_id):
             _log_call(user_id, purpose, provider.model_name, False, None, str(first_error))
             logger.warning("llm_validation_retry", extra={"extra_fields": {"purpose": purpose, "error": str(first_error)}})
 
+            if sink is not None:
+                # The retry regenerates the document from the top, so anything
+                # already on screen belongs to the attempt being abandoned.
+                sink.restart()
+
             retry_user = (
                 f"{user}\n\n"
                 f"Your previous response failed schema validation with this error:\n{first_error}\n"
                 f"Return ONLY a single valid JSON object matching the schema. No markdown fences, no commentary."
             )
             try:
-                data, usage = _try_once(provider, system, retry_user, schema)
+                data, usage = _try_once(provider, system, retry_user, schema, on_delta)
                 result = schema.model_validate(data)
                 _log_call(user_id, purpose, provider.model_name, True, usage)
                 return result

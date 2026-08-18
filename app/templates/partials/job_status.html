@@ -1,3 +1,7 @@
+{# The no-JavaScript path, and the safety net under the stream (§5.7): with
+   a live EventSource this is fetched once, when the stream reports done;
+   without one the 1.5s poll below is still what moves the page along. Both
+   arrive at the same rendered result. #}
 <div id="job-status"
      {% if job.status in ('queued', 'running') %}
        hx-get="{{ url_for('jobs.status', job_id=job.id) }}" hx-trigger="every 1.5s" hx-swap="outerHTML"
@@ -5,22 +9,26 @@
   {% if job.status == 'queued' %}
     <p class="muted">Queued&hellip;</p>
   {% elif job.status == 'running' %}
-    <p class="muted">Working on it&hellip; this can take up to a minute.</p>
+    <p class="muted">Working on it&hellip; this can take a minute or two.</p>
   {% elif job.status == 'done' %}
     {% if job.kind == 'generate_scenario' %}
       <p><a class="btn" href="{{ url_for('train.view_scenario', scenario_id=job.result.scenario_id) }}">Start</a></p>
-    {% elif job.kind == 'grade_attempt' %}
-      <p><a class="btn" href="{{ url_for('train.feedback', scenario_id=job.result.scenario_id) }}">See feedback</a></p>
-      {% if job.result.triggered %}
-        <div class="notice notice--flash">
-          {% for t in job.result.triggered %}
-            {% if t.mode == 'existing' %}
-              A tutorial is ready for this gap — see it in your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab.
-            {% elif t.mode == 'generating' or t.mode == 'pending' %}
-              We noticed a gap and are writing a tutorial for it — check your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab shortly.
-            {% endif %}
-          {% endfor %}
-        </div>
+    {% elif job.kind == 'converse_turn' %}
+      {% if job.result.conversation_complete %}
+        <p><a class="btn" href="{{ url_for('train.feedback', scenario_id=job.result.scenario_id) }}">See the summary</a></p>
+        {% if job.result.triggered %}
+          <div class="notice notice--flash">
+            {% for t in job.result.triggered %}
+              {% if t.mode == 'existing' %}
+                A tutorial is ready for a gap this turned up — see it in your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab.
+              {% elif t.mode == 'generating' or t.mode == 'pending' %}
+                We spotted a gap and are writing a tutorial for it — check your <a href="{{ url_for('tutorials.library') }}">Tutorials</a> tab shortly.
+              {% endif %}
+            {% endfor %}
+          </div>
+        {% endif %}
+      {% else %}
+        <p><a class="btn" href="{{ url_for('train.view_scenario', scenario_id=job.result.scenario_id) }}">Continue the conversation</a></p>
       {% endif %}
     {% elif job.kind == 'generate_tutorial' %}
       <p>New tutorial ready: <a href="{{ url_for('tutorials.view', slug=job.result.tutorial_slug) }}">open it</a></p>
@@ -32,8 +40,8 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <button type="submit" class="btn btn--ghost">Try again</button>
       </form>
-    {% elif job.kind == 'grade_attempt' and retry_scenario_id %}
-      <a class="btn btn--ghost" href="{{ url_for('train.view_scenario', scenario_id=retry_scenario_id) }}">Back to the scenario</a>
+    {% elif job.kind == 'converse_turn' and retry_scenario_id %}
+      <a class="btn btn--ghost" href="{{ url_for('train.view_scenario', scenario_id=retry_scenario_id) }}">Back to the conversation</a>
     {% endif %}
   {% endif %}
 </div>

@@ -46,4 +46,15 @@ export RUN_BACKGROUND_WORKER=1
 # prefers a same-named package over a same-named .py file in the same
 # directory) — `gunicorn app:app` would fail with AttributeError since
 # app/__init__.py exposes `create_app`, not a bare `app` instance.
-exec gunicorn -b "0.0.0.0:${PORT}" --workers 1 --threads 4 --worker-class gthread --timeout 120 wsgi:app
+# --threads is 16 rather than 4 because of token streaming (docs §5.7): an
+# open SSE connection occupies a thread for as long as its reply takes to
+# generate, which on a slow model is a minute or more. At 4 threads, four
+# students mid-answer would leave nothing to serve the health-check probe
+# with. Threads are cheap here — they are blocked on a socket, not on CPU —
+# and one worker process is still what keeps the job queue and the stream
+# broker in a single address space.
+#
+# --timeout is unchanged and safe: gthread's arbiter heartbeat comes from the
+# worker's accept loop, not from request duration, so a long-lived stream
+# doesn't look like a hung worker.
+exec gunicorn -b "0.0.0.0:${PORT}" --workers 1 --threads 16 --worker-class gthread --timeout 120 wsgi:app

@@ -1,0 +1,19 @@
+{# One reply arriving token by token (§5.7).
+
+   `stream.js` opens an EventSource on `data-stream-url` and appends each
+   delta as a *text node* — never as HTML. What is on screen here is raw,
+   unsanitised model output, so it is shown as literal text and nothing else;
+   the markdown-rendered, nh3-sanitised version arrives with the htmx swap
+   below, which fires once on the `stream-done` event the same script
+   dispatches. That split is deliberate: the animation never gets to inject
+   anything, and the final content never has to be trusted to a client-side
+   renderer.
+
+   Callers pass `stream_target` (the element htmx replaces) and
+   `stream_source` (the URL to re-render it from). #}
+<div class="stream"
+     data-stream-url="{{ url_for('jobs.token_stream', job_id=stream_job.id) }}"
+     hx-get="{{ stream_source }}"
+     hx-trigger="stream-done"
+     hx-target="{{ stream_target }}"
+     hx-swap="outerHTML"></div>

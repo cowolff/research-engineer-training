@@ -1,6 +1,20 @@
 {% extends "base.html" %}
-{% block title %}{{ heading }} — Maluna{% endblock %}
+{% block title %}{{ heading }} — Maia{% endblock %}
 {% block content %}
   <h1>{{ heading }}</h1>
+
+  {# Writing a scenario is the one wait that genuinely has nowhere else to
+     happen — the student arrived here from the dashboard and there is no page
+     yet to stream into. So this shows the scenario being written, and
+     partials/job_status.html sends them straight into it when it's ready
+     rather than parking them behind a button (§5.7). #}
+  <div class="card">
+    {% with stream_job = job,
+            stream_target = '#job-status',
+            stream_source = url_for('jobs.status', job_id=job.id) %}
+      {% include "partials/stream_bubble.html" %}
+    {% endwith %}
+  </div>
+
   {% include "partials/job_status.html" %}
 {% endblock %}

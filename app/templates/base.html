@@ -3,13 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Maluna Engineer Training{% endblock %}</title>
+  <title>{% block title %}Maia Engineer Training{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
   <script src="{{ url_for('static', filename='htmx.min.js') }}"></script>
+  <script src="{{ url_for('static', filename='stream.js') }}" defer></script>
 </head>
 <body hx-headers='{"X-CSRFToken": "{{ csrf_token() }}"}'>
   <nav class="nav">
-    <a class="nav__brand" href="{{ url_for('public.index') }}">Maluna</a>
+    <a class="nav__brand" href="{{ url_for('public.index') }}">Maia</a>
     {% if current_user.is_authenticated %}
       <a href="{{ url_for('core.dashboard') }}">Dashboard</a>
       <a href="{{ url_for('tutorials.library') }}">Tutorials</a>

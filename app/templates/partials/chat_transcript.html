@@ -1,0 +1,57 @@
+{# The scenario as the opening message, then alternating bubbles. Shared by
+   the live conversation view and the final summary so the transcript looks
+   identical in both.
+
+   The last two blocks only render while a turn is in flight, which is never
+   the case on the summary page — `pending_message` and `stream_job` are
+   simply absent there. #}
+<div class="chat">
+  <div class="msg msg--assistant">
+    <div class="msg__who">Scenario</div>
+    <div class="msg__bubble">
+      <p><strong>{{ scenario.title }}</strong></p>
+      {{ scenario.prompt_md | markdown | safe }}
+      {% for artifact in scenario.artifacts %}
+        <p class="muted mono">{{ artifact.label }}</p>
+        <pre>{{ artifact.content }}</pre>
+      {% endfor %}
+    </div>
+  </div>
+
+  {% for turn in turns %}
+    <div class="msg msg--student">
+      <div class="msg__who">You</div>
+      <div class="msg__bubble">{{ turn.student_message }}</div>
+    </div>
+    <div class="msg msg--assistant">
+      <div class="msg__who">Maia</div>
+      <div class="msg__bubble">
+        {{ turn.assistant_reply_md | markdown | safe }}
+        {% if turn.follow_up_question %}
+          <p class="msg__nudge">{{ turn.follow_up_question }}</p>
+        {% endif %}
+      </div>
+    </div>
+  {% endfor %}
+
+  {% if pending_message %}
+    {# Echoed from the form, not the database: this turn is still being
+       generated, so there is no ConversationTurn row to read it from yet. #}
+    <div class="msg msg--student">
+      <div class="msg__who">You</div>
+      <div class="msg__bubble">{{ pending_message }}</div>
+    </div>
+  {% endif %}
+
+  {% if stream_job %}
+    <div class="msg msg--assistant">
+      <div class="msg__who">Maia</div>
+      <div class="msg__bubble">
+        {% with stream_target = '#chat-panel',
+                stream_source = url_for('train.chat_panel', scenario_id=scenario.id, job_id=stream_job.id) %}
+          {% include "partials/stream_bubble.html" %}
+        {% endwith %}
+      </div>
+    </div>
+  {% endif %}
+</div>

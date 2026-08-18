@@ -21,7 +21,7 @@ class Job(db.Model):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(32), ForeignKey("users.id"), nullable=False, index=True)
-    kind: Mapped[str] = mapped_column(String(32), nullable=False)  # generate_scenario|grade_attempt|generate_tutorial
+    kind: Mapped[str] = mapped_column(String(32), nullable=False)  # generate_scenario|converse_turn|generate_tutorial
     payload_json: Mapped[dict] = mapped_column(JSON, nullable=False, default=dict)
     status: Mapped[str] = mapped_column(String(16), nullable=False, default="queued", index=True)  # queued|running|done|failed
     result_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)

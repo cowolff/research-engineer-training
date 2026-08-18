@@ -1,8 +1,14 @@
 {% extends "base.html" %}
-{% block title %}Feedback — {{ scenario.title }}{% endblock %}
+{% block title %}Summary — {{ scenario.title }}{% endblock %}
 {% block content %}
   <h1>{{ scenario.title }}</h1>
-  <p class="card"><strong>Score: {{ (attempt.score * 100) | round | int }}%</strong></p>
+  <p class="card">
+    <strong>Score: {{ (attempt.score * 100) | round | int }}%</strong>
+    <span class="muted mono">· {{ attempt.turn_count }} turn{{ '' if attempt.turn_count == 1 else 's' }}</span>
+  </p>
+
+  <h2>The conversation</h2>
+  {% include "partials/chat_transcript.html" %}
 
   <h2>Rubric</h2>
   {% for item in attempt.grade['items'] %}
@@ -11,6 +17,11 @@
       <p>
         <span class="chip chip--{{ item.status }}">{{ item.status }}</span>
         <strong>{{ concept.name if concept else item.concept_id }}</strong>
+        {% if item.first_covered_turn and item.first_covered_turn > 1 %}
+          <span class="chip">after a nudge, turn {{ item.first_covered_turn }}</span>
+        {% elif item.first_covered_turn == 1 %}
+          <span class="chip chip--covered">unaided</span>
+        {% endif %}
       </p>
       <p>{{ item.feedback }}</p>
       {% if item.evidence %}<p class="muted mono">Evidence: &ldquo;{{ item.evidence }}&rdquo;</p>{% endif %}
@@ -24,8 +35,44 @@
     </div>
   {% endfor %}
 
-  <h2>What a strong answer covers</h2>
-  <div class="card">{{ attempt.model_answer_md | markdown | safe }}</div>
+  {% if help_exchanges %}
+    <h2>Terms you looked up</h2>
+    {# Shown because it's honest about how the scenario was worked through,
+       and because a recurring vocabulary gap is worth noticing. It is
+       deliberately *not* part of the rubric result above: asking what a word
+       means neither earns credit nor costs any (§5.6). #}
+    <details class="card">
+      <summary class="muted">
+        {{ help_exchanges | length }} question{{ '' if (help_exchanges | length) == 1 else 's' }}
+        asked in the side chat
+      </summary>
+      <div class="help__thread help__thread--replay">
+        {% for exchange in help_exchanges %}
+          <div class="msg msg--student">
+            <div class="msg__who">You asked</div>
+            <div class="msg__bubble">{{ exchange.question }}</div>
+          </div>
+          <div class="msg msg--assistant">
+            <div class="msg__who">{% if exchange.declined %}Not here{% else %}Glossary{% endif %}</div>
+            <div class="msg__bubble {% if exchange.declined %}msg__bubble--declined{% endif %}">
+              {{ exchange.answer_md | markdown | safe }}
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+    </details>
+  {% endif %}
 
-  <p><a class="btn" href="{{ url_for('core.dashboard') }}">Back to dashboard</a></p>
+  {% if attempt.model_answer_md %}
+    <h2>What a strong answer covers</h2>
+    <div class="card">{{ attempt.model_answer_md | markdown | safe }}</div>
+  {% endif %}
+
+  <div class="actions">
+    <a class="btn" href="{{ url_for('core.dashboard') }}">Back to dashboard</a>
+    <form method="post" action="{{ url_for('train.start') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="btn btn--ghost">Next scenario</button>
+    </form>
+  </div>
 {% endblock %}

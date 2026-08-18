@@ -123,7 +123,7 @@ class LiteLLMProvider:
         self._timeout_seconds = timeout_seconds
         self._temperature = temperature
 
-    def raw_complete(self, system, user, schema=None):
+    def raw_complete(self, system, user, schema=None, on_delta=None):
         import litellm
 
         messages = [
@@ -161,10 +161,18 @@ class LiteLLMProvider:
         )
         # Each chunk read is bound by `timeout` individually (see module
         # docstring) — this is what turns a hard overall deadline into a
-        # per-chunk idle timeout. Fully consuming into a list before
-        # processing is fine: nothing downstream needs partial/incremental
-        # content, only the finished text.
-        chunks = list(stream)
+        # per-chunk idle timeout. The chunks are still collected in full for
+        # `stream_chunk_builder` below, which is what everything downstream
+        # parses; `on_delta` is a display-only side channel taken off the same
+        # pass, so the student watches the reply appear at the rate the model
+        # actually produces it (§5.7).
+        chunks = []
+        for chunk in stream:
+            chunks.append(chunk)
+            if on_delta is not None:
+                delta = _visible_text(chunk)
+                if delta:
+                    on_delta(delta)
         latency_ms = int((time.monotonic() - started) * 1000)
 
         response = litellm.stream_chunk_builder(chunks, messages=messages)
@@ -176,6 +184,19 @@ class LiteLLMProvider:
             latency_ms=latency_ms,
             cost_estimate_cents=_estimate_cost_cents(response),
         )
+
+
+def _visible_text(chunk):
+    """The user-visible slice of one streamed chunk. A reasoning model also
+    streams `reasoning_content` (which is exactly why this provider streams at
+    all — see the module docstring); that is hidden scratch work and is
+    deliberately not forwarded, the same way `stream_chunk_builder` excludes
+    it from the reconstructed message."""
+    try:
+        return chunk.choices[0].delta.content or ""
+    except (AttributeError, IndexError, TypeError):
+        # A chunk carrying only usage or a finish_reason has no delta content.
+        return ""
 
 
 def _estimate_cost_cents(response):

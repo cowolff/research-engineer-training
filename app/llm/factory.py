@@ -15,7 +15,7 @@ def get_provider(app):
         if cfg.llm_provider == "fake":
             from app.llm.fake import FakeProvider
 
-            _cached["provider"] = FakeProvider()
+            _cached["provider"] = FakeProvider(chunk_delay_seconds=cfg.fake_stream_delay_seconds)
         elif cfg.llm_provider == "litellm":
             from app.llm.litellm_provider import LiteLLMProvider
 

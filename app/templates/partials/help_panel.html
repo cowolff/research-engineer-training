@@ -1,0 +1,89 @@
+{# The side chat (§5.6): ask what a term means without leaving the scenario.
+
+   The whole panel is swapped as one unit — by the form's own hx-post, and
+   then once more when the streamed answer finishes and the rendered version
+   is available. Nothing outside #help-panel is touched, which is the point:
+   the student's draft answer in the main textarea survives every swap. #}
+<aside id="help-panel" class="help">
+  <h2 class="help__title">Ask about a term</h2>
+  <p class="help__hint">
+    Stuck on a word in the scenario? Ask here. This window explains
+    terminology only &mdash; it won&rsquo;t work the scenario out for you.
+  </p>
+
+  {% if help_error %}
+    <div class="notice notice--error help__notice">{{ help_error }}</div>
+  {% endif %}
+
+  {% set answering = help_job and help_job.status in ('queued', 'running') %}
+
+  <div class="help__thread">
+    {% for exchange in help_exchanges %}
+      <div class="msg msg--student">
+        <div class="msg__who">You asked</div>
+        <div class="msg__bubble">{{ exchange.question }}</div>
+      </div>
+      <div class="msg msg--assistant">
+        <div class="msg__who">{% if exchange.declined %}Not here{% else %}Glossary{% endif %}</div>
+        <div class="msg__bubble {% if exchange.declined %}msg__bubble--declined{% endif %}">
+          {{ exchange.answer_md | markdown | safe }}
+        </div>
+      </div>
+    {% else %}
+      {% if not answering %}
+        <p class="muted help__empty">
+          No questions yet. Try &ldquo;what does <em>throughput</em> mean here?&rdquo;
+        </p>
+      {% endif %}
+    {% endfor %}
+
+    {% if answering %}
+      <div class="msg msg--student">
+        <div class="msg__who">You asked</div>
+        <div class="msg__bubble">{{ help_job.payload.question }}</div>
+      </div>
+      <div class="msg msg--assistant">
+        <div class="msg__who">Glossary</div>
+        <div class="msg__bubble">
+          {% with stream_job = help_job,
+                  stream_target = '#help-panel',
+                  stream_source = url_for('train.help_panel', scenario_id=scenario.id, job_id=help_job.id) %}
+            {% include "partials/stream_bubble.html" %}
+          {% endwith %}
+        </div>
+      </div>
+    {% endif %}
+  </div>
+
+  {# While an answer is in flight the composer is deliberately absent: the
+     panel is replaced wholesale when the stream lands, so a textarea left
+     here would have whatever the student typed into it wiped. Their real
+     answer, in the main composer, is untouched either way — that is the one
+     draft on this page that must never be lost. #}
+  {% if not answering %}
+    {% if help_remaining > 0 %}
+      <form class="help__compose"
+            method="post"
+            action="{{ url_for('train.ask_help', scenario_id=scenario.id) }}"
+            hx-post="{{ url_for('train.ask_help', scenario_id=scenario.id) }}"
+            hx-target="#help-panel"
+            hx-swap="outerHTML">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <label for="help_question" class="help__label">What term is unclear?</label>
+        <textarea id="help_question" name="question" class="help__input" rows="2"
+                  placeholder="e.g. what is continuous batching?" required></textarea>
+        <div class="help__actions">
+          <button type="submit" class="btn btn--ghost">Ask</button>
+          <span class="muted mono">
+            {{ help_remaining }} question{{ '' if help_remaining == 1 else 's' }} left
+          </span>
+        </div>
+      </form>
+    {% else %}
+      <p class="muted help__empty">
+        You&rsquo;ve used your questions for this scenario. The main
+        conversation is still open.
+      </p>
+    {% endif %}
+  {% endif %}
+</aside>

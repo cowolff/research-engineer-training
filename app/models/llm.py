@@ -22,7 +22,7 @@ class LLMCall(db.Model):
 
     id: Mapped[str] = mapped_column(String(32), primary_key=True, default=_uuid)
     user_id: Mapped[str] = mapped_column(String(32), ForeignKey("users.id"), nullable=False, index=True)
-    purpose: Mapped[str] = mapped_column(String(32), nullable=False)  # scenario|grade|tutorial
+    purpose: Mapped[str] = mapped_column(String(32), nullable=False)  # scenario|converse|tutorial|term_help
     model: Mapped[str] = mapped_column(String(64), nullable=False, default="")
     ok: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False, default=0)

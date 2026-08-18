@@ -1,4 +1,4 @@
-# Maluna Engineer Training
+# Maia Engineer Training
 
 A scenario-based training tool for Cognitive Science students becoming AI
 research engineers. Mistral (`mistral-medium`) generates engineering scenarios
@@ -68,11 +68,11 @@ atlasflow's Runtime Variables.
 The quickest check that the built image itself works:
 
 ```bash
-docker build -t maluna .
+docker build -t maia .
 docker run --rm -p 3000:3000 \
   -e SECRET_KEY=dev-only \
   -e LLM_PROVIDER=fake \
-  maluna
+  maia
 curl http://localhost:3000/
 ```
 
@@ -86,7 +86,7 @@ docker run --rm -p 3000:3000 \
   --env-file .env \
   -e SECRET_KEY=dev-only \
   -e SQLITE_PATH=/data/app.db \
-  maluna
+  maia
 ```
 
 - **`SECRET_KEY`** — `.env.example` ships this commented out, so `--env-file`

@@ -1,0 +1,53 @@
+{# The live half of the conversation view: transcript, the reply currently
+   streaming in, and the composer.
+
+   Swapped as one unit and only twice per turn — once by the compose form's
+   own hx-post when the turn starts, once more when the stream ends and the
+   finished turn can be read back from the database. Nothing polls, and
+   nothing navigates: the student never leaves the scenario they are reading
+   (§5.7). #}
+<div id="chat-panel">
+  <p>
+    <span class="chip">{{ scenario.type.replace('_', ' ') }}</span>
+    <span class="chip">band {{ scenario.band }}</span>
+    {% set turn_number = (turns | length) + (1 if pending_message else 0) %}
+    {% if turn_number %}
+      <span class="chip">turn {{ turn_number }} of {{ max_turns }}</span>
+    {% endif %}
+  </p>
+
+  {% include "partials/chat_transcript.html" %}
+
+  {% if chat_error %}
+    <div class="notice notice--error">{{ chat_error }}</div>
+  {% endif %}
+
+  {% if attempt and attempt.is_complete %}
+    {# The wrap-up has just finished streaming in above, so there is nothing
+       to wait for and no reason to yank the page away from it — the summary
+       is a link the student takes when they've read it. #}
+    <div class="chat__compose">
+      <p class="muted">That closes this conversation.</p>
+      <a class="btn" href="{{ url_for('train.feedback', scenario_id=scenario.id) }}">See the summary</a>
+    </div>
+  {% elif not pending_message %}
+    <form method="post" action="{{ url_for('train.send_message', scenario_id=scenario.id) }}"
+          class="chat__compose"
+          hx-post="{{ url_for('train.send_message', scenario_id=scenario.id) }}"
+          hx-target="#chat-panel"
+          hx-swap="outerHTML">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div class="field">
+        <label for="student_message">
+          {% if turns %}Your reply{% else %}Your answer{% endif %}
+        </label>
+        <textarea id="student_message" name="student_message" required
+                  placeholder="{% if turns %}Answer the question above — thinking out loud is fine.{% else %}Explain your reasoning — the more specific, the better the conversation.{% endif %}">{{ draft or '' }}</textarea>
+      </div>
+      <button type="submit">Send</button>
+      <span class="muted mono">
+        {{ max_turns - (turns | length) }} turn{{ '' if (max_turns - (turns | length)) == 1 else 's' }} left
+      </span>
+    </form>
+  {% endif %}
+</div>

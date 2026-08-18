@@ -1,4 +1,8 @@
+import logging
 import os
+import sqlite3
+
+logger = logging.getLogger("app.config")
 
 
 class ConfigError(RuntimeError):
@@ -86,11 +90,37 @@ class Config:
         llm_temperature = env.get("LLM_TEMPERATURE")
         self.llm_temperature = float(llm_temperature) if llm_temperature not in (None, "") else None
 
+        # How long FakeProvider pauses between the pieces it streams. Zero
+        # under TESTING (a suite has nobody watching and shouldn't sleep);
+        # otherwise a small pause, so `LLM_PROVIDER=fake` local dev shows the
+        # reply actually arriving token by token (§5.7) rather than appearing
+        # complete in one frame, which is the one thing a fake model would
+        # otherwise fail to demonstrate about the real one.
+        self.fake_stream_delay_seconds = float(
+            env.get("FAKE_STREAM_DELAY_SECONDS", "0" if self.testing else "0.015")
+        )
+
         self.database_url = env.get("DATABASE_URL")
         self.sqlite_path = env.get("SQLITE_PATH", "/data/app.db")
 
         self.resource_index_path = env.get("RESOURCE_INDEX_PATH", "app/data/resources.sqlite")
         self.resource_shortlist_max = int(env.get("RESOURCE_SHORTLIST_MAX", "8"))
+
+        # How many student messages a single scenario conversation allows
+        # before it must close (§5.5). Every turn is one LLM call, so this is
+        # directly a waiting-time budget: on a slow self-hosted model at
+        # ~60-120s per turn, 3 turns is roughly 3-6 minutes per scenario.
+        # Raise it for a faster backend and a longer Socratic back-and-forth.
+        self.max_conversation_turns = int(env.get("MAX_CONVERSATION_TURNS", "3"))
+
+        # The side chat beside a scenario (§5.6) — how many terminology
+        # questions a student may ask per scenario. Every question is its own
+        # LLM call and also counts against MAX_LLM_CALLS_PER_DAY, so this cap
+        # exists to stop the glossary eating the whole daily allowance and
+        # leaving nothing for actual training; it is not there to ration
+        # curiosity, which is why it is well above what a normal scenario
+        # needs.
+        self.max_help_questions_per_scenario = int(env.get("MAX_HELP_QUESTIONS_PER_SCENARIO", "5"))
 
         self.miss_threshold = int(env.get("MISS_THRESHOLD", "3"))
         self.max_llm_calls_per_day = int(env.get("MAX_LLM_CALLS_PER_DAY", "60"))
@@ -127,18 +157,49 @@ class Config:
         return f"sqlite:///{self._writable_sqlite_path()}"
 
     def _writable_sqlite_path(self):
-        """Fall back to /tmp if /data isn't writable (e.g. local dev without the
-        volume this template assumes on the hosting platform)."""
-        path = self.sqlite_path
-        directory = os.path.dirname(path) or "."
+        """Falls back to /tmp if the configured path isn't actually usable —
+        checked with a real sqlite3 connection in WAL mode (matching exactly
+        what app/db.py configures for the real engine), not just a plain
+        file write.
+
+        That distinction is load-bearing, found the hard way: a plain
+        `open(path, "w")` can succeed on a directory where SQLite itself
+        still fails with "unable to open database file" — SQLite needs
+        proper file-locking support, and WAL mode specifically also needs
+        mmap/shared-memory support for its `-shm` file, neither of which a
+        basic write test exercises. That gap let a bad SQLITE_PATH reach
+        production as an uncaught crash-loop instead of triggering this
+        fallback.
+
+        Also resolves to an absolute path first: a relative SQLITE_PATH
+        (e.g. the `./instance/dev.db` this template's own .env.example
+        suggests for local dev) is only meaningful relative to whatever the
+        *current* process's cwd happens to be — exactly the kind of
+        environment-specific behavior a Runtime Variable shouldn't depend on.
+        """
+        path = os.path.abspath(self.sqlite_path)
+        directory = os.path.dirname(path)
+        probe_path = os.path.join(directory, ".write-test.sqlite")
         try:
             os.makedirs(directory, exist_ok=True)
-            probe = os.path.join(directory, ".write-test")
-            with open(probe, "w") as f:
-                f.write("")
-            os.remove(probe)
+            conn = sqlite3.connect(probe_path)
+            try:
+                conn.execute("PRAGMA journal_mode=WAL")
+                conn.execute("CREATE TABLE t (id INTEGER)")
+                conn.execute("INSERT INTO t VALUES (1)")
+                conn.commit()
+            finally:
+                conn.close()
             return path
-        except OSError:
+        except (OSError, sqlite3.OperationalError) as exc:
+            logger.warning(
+                "sqlite_path_unusable_falling_back_to_tmp",
+                extra={"extra_fields": {"configured_path": self.sqlite_path, "resolved_path": path, "error": str(exc)}},
+            )
             fallback_dir = "/tmp/app-data"
             os.makedirs(fallback_dir, exist_ok=True)
             return os.path.join(fallback_dir, os.path.basename(path))
+        finally:
+            for candidate in (probe_path, f"{probe_path}-wal", f"{probe_path}-shm", f"{probe_path}-journal"):
+                if os.path.exists(candidate):
+                    os.remove(candidate)

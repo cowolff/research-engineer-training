@@ -1,24 +1,19 @@
 {% extends "base.html" %}
-{% block title %}{{ scenario.title }} — Maluna{% endblock %}
+{% block title %}{{ scenario.title }} — Maia{% endblock %}
+{% block wrap_class %}wrap--wide{% endblock %}
 {% block content %}
-  <p>
-    <span class="chip">{{ scenario.type.replace('_', ' ') }}</span>
-    <span class="chip">band {{ scenario.band }}</span>
-  </p>
-  <h1>{{ scenario.title }}</h1>
-  <div class="card">{{ scenario.prompt_md | markdown | safe }}</div>
+  {# Two columns: the training conversation, and the glossary side chat beside
+     it (§5.6). Collapses to one column on narrow screens, with the side chat
+     below — the scenario is what the student came here to read.
 
-  {% for artifact in scenario.artifacts %}
-    <p class="muted mono">{{ artifact.label }}</p>
-    <pre>{{ artifact.content }}</pre>
-  {% endfor %}
-
-  <form method="post" action="{{ url_for('train.submit_answer', scenario_id=scenario.id) }}">
-    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <div class="field">
-      <label for="answer_text">Your answer</label>
-      <textarea id="answer_text" name="answer_text" required placeholder="Explain your reasoning — the more specific, the better the feedback."></textarea>
+     Both columns swap independently and neither one navigates: a reply and a
+     glossary answer can be streaming at the same time without either
+     disturbing the other, or the draft in the composer between them. #}
+  <div class="train">
+    <div class="train__main">
+      {% include "partials/chat_panel.html" %}
     </div>
-    <button type="submit">Submit answer</button>
-  </form>
+
+    {% include "partials/help_panel.html" %}
+  </div>
 {% endblock %}
